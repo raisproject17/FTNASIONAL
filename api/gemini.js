@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
     if (!query) return res.status(400).json({ error: "Query kosong" });
 
-    // MENGGUNAKAN MODEL STABIL (gemini-1.5-flash) UNTUK PUBLIC API VERCEL
+    // Menggunakan model stabil (gemini-1.5-flash)
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
     
     const payload = {
@@ -15,7 +15,8 @@ export default async function handler(req, res) {
         systemInstruction: { 
             parts: [{ text: "Anda adalah asisten cerdas untuk menjawab kuis dan pertanyaan umum. Berikan jawaban yang akurat, singkat, dan langsung pada intinya dalam bahasa Indonesia." }] 
         },
-        tools: [{ "google_search": {} }]
+        // PERBAIKAN: Format tool Google Search yang didukung oleh API REST Google
+        tools: [{ googleSearch: {} }] 
     };
 
     try {
