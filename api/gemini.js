@@ -1,20 +1,16 @@
 module.exports = async function (req, res) {
-    // 1. Mengizinkan CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     if (req.method === 'OPTIONS') return res.status(200).end();
-
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    // 2. Mengambil API Key dari Vercel
-    const API_KEY = process.env.GEMINI_API_KEY;
     const query = req.body.query;
-
-    if (!API_KEY) return res.status(500).json({ error: "Variabel GEMINI_API_KEY belum diisi di Vercel." });
     if (!query) return res.status(400).json({ error: "Query pencarian tidak boleh kosong." });
 
-    // 3. Konfigurasi model stabil gemini-1.5-flash
+    // 2. API KEY GEMINI ANDA
+    const API_KEY = "AQ.Ab8RN6LsdtqNeGVnT8pKUZDQpfzJDbGeco3n_Hy_fEFaNzNo2Q";
+    
+    // Konfigurasi model stabil
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
     
     const payload = {
@@ -32,12 +28,12 @@ module.exports = async function (req, res) {
             body: JSON.stringify(payload)
         });
 
+        const data = await response.json();
+        
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error?.message || "Koneksi ke AI Google gagal.");
+            throw new Error(data.error?.message || "Koneksi ke AI gagal. Periksa kembali API Key Anda.");
         }
 
-        const data = await response.json();
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, AI tidak menemukan jawaban.";
         
         // Memisahkan sumber referensi link dari Google
@@ -47,13 +43,11 @@ module.exports = async function (req, res) {
             sources = rawSources
                 .filter(a => a.web && a.web.uri)
                 .map(a => ({ uri: a.web.uri, title: a.web.title }));
-            // Hilangkan duplikat
             sources = sources.filter((v, i, a) => a.findIndex(t => (t.uri === v.uri)) === i);
         }
 
         res.status(200).json({ text, sources });
     } catch (error) {
-        console.error("Gemini API Error:", error);
         res.status(500).json({ error: error.message });
     }
 };
