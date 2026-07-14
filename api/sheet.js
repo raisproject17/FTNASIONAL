@@ -3,7 +3,7 @@ module.exports = async function (req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     // 1. URL SPREADSHEET (Sudah dikonversi ke format CSV)
-    const SHEET_URL = "[https://docs.google.com/spreadsheets/d/10Xr6T9yTjfCTvMLurGzxe82gZ1QHbgEimYhEIBnlQp0/export?format=csv](https://docs.google.com/spreadsheets/d/10Xr6T9yTjfCTvMLurGzxe82gZ1QHbgEimYhEIBnlQp0/export?format=csv)";
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/10Xr6T9yTjfCTvMLurGzxe82gZ1QHbgEimYhEIBnlQp0/edit?usp=sharing";
 
     try {
         const response = await fetch(SHEET_URL);
