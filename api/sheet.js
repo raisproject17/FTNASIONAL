@@ -1,22 +1,9 @@
 module.exports = async function (req, res) {
-    // 1. Mengizinkan CORS agar tidak diblokir browser saat testing
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    if (req.method !== 'GET') return res.status(405).json({ error: 'Method Not Allowed' });
-
-    // 2. Rahasia URL diambil dari Environment Variable
-    let SHEET_URL = process.env.SPREADSHEET_URL;
-
-    if (!SHEET_URL) {
-        return res.status(500).json({ error: "Variabel SPREADSHEET_URL belum diisi di Vercel." });
-    }
-
-    // 3. FITUR AUTO-CONVERT: Ubah URL /edit menjadi /export CSV
-    if (SHEET_URL.includes('/edit')) {
-        SHEET_URL = SHEET_URL.replace(/\/edit.*$/, '/export?format=csv');
-    }
+    // 1. URL SPREADSHEET (Sudah dikonversi ke format CSV)
+    const SHEET_URL = "[https://docs.google.com/spreadsheets/d/10Xr6T9yTjfCTvMLurGzxe82gZ1QHbgEimYhEIBnlQp0/export?format=csv](https://docs.google.com/spreadsheets/d/10Xr6T9yTjfCTvMLurGzxe82gZ1QHbgEimYhEIBnlQp0/export?format=csv)";
 
     try {
         const response = await fetch(SHEET_URL);
@@ -24,12 +11,12 @@ module.exports = async function (req, res) {
         
         const csvText = await response.text();
         
-        // 4. Pengecekan Izin Akses Google Sheet
+        // Pengecekan Izin Akses Google Sheet
         if (csvText.trim().toLowerCase().startsWith('<!doctype html>')) {
-            throw new Error("Akses ditolak! Buka Google Sheet Anda -> klik 'Share' -> ubah menjadi 'Anyone with the link' (Siapa saja yang memiliki link).");
+            throw new Error("Akses ditolak! Pastikan Google Sheet Anda disetel ke 'Anyone with the link'.");
         }
         
-        // 5. Parsing CSV
+        // Parsing CSV
         const arr = [];
         let quote = false;
         let row = 0, col = 0;
@@ -48,10 +35,8 @@ module.exports = async function (req, res) {
 
         // Filter data kosong
         const validData = arr.filter(r => r.length >= 2 && r[0].trim() !== '');
-        
         res.status(200).json(validData);
     } catch (error) {
-        console.error("Sheet API Error:", error);
         res.status(500).json({ error: error.message });
     }
 };
