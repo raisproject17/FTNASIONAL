@@ -64,8 +64,6 @@
         .prose p { margin-bottom: 0.75em; }
         .prose strong { color: #0f172a; font-weight: 600; }
         html.dark .prose strong { color: #f8fafc; }
-        
-        /* Modal Scroll */
         .modal-scroll { max-height: 60vh; overflow-y: auto; }
     </style>
 </head>
@@ -92,11 +90,11 @@
         const EyeIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>;
         const EyeOffIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>;
         const AlertIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
+        const ClipboardIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>;
 
         const CACHE_DURATION = 24 * 60 * 60 * 1000;
-        const SESSION_DURATION = 60 * 60 * 1000; // 1 Jam batas Public/Private
+        const SESSION_DURATION = 60 * 60 * 1000; 
 
-        // --- SISTEM COOKIE ---
         const setCookie = (name, value, days) => {
             const date = new Date();
             date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -113,7 +111,6 @@
             return null;
         };
 
-        // --- PELACAK PERANGKAT & IP ---
         const fetchDeviceDetails = async () => {
             const os = /Windows|Mac|Linux|Android|iOS/.exec(navigator.userAgent)?.[0] || 'Unknown OS';
             const browser = /Chrome|Firefox|Safari|Edge|Opera/.exec(navigator.userAgent)?.[0] || 'Unknown Browser';
@@ -122,11 +119,10 @@
                 const data = await res.json();
                 return `IP: ${data.ipAddress} | ${data.city}, ${data.countryName} | ${os} (${browser})`;
             } catch (e) {
-                return `OS: ${os} | Browser: ${browser} | (IP Gagal Dilacak)`;
+                return `OS: ${os} | Browser: ${browser}`;
             }
         };
 
-        // --- LOKAL DB ---
         const dbPromise = () => new Promise((res, rej) => {
             const request = indexedDB.open('SmartQuizDB', 1);
             request.onerror = () => rej(request.error);
@@ -158,14 +154,14 @@
         };
 
         const App = () => {
-            const [userRole, setUserRole] = useState(null); // 'admin', 'private', 'public'
+            const [userRole, setUserRole] = useState(null); 
             const [inputKey, setInputKey] = useState("");
             const [showPassword, setShowPassword] = useState(false);
             const [loginError, setLoginError] = useState("");
             const [isAuthenticating, setIsAuthenticating] = useState(false);
             const [authLoading, setAuthLoading] = useState(true);
 
-            // Admin Dashboard States
+            // Dashboard
             const [showDashboard, setShowDashboard] = useState(false);
             const [adminData, setAdminData] = useState(null);
             const [adminLoading, setAdminLoading] = useState(false);
@@ -174,13 +170,14 @@
             const [newPub, setNewPub] = useState("");
             const [newPriv, setNewPriv] = useState("");
 
-            // Data States
+            // Data
             const [query, setQuery] = useState("");
             const [db, setDb] = useState({});
             const [dbStatus, setDbStatus] = useState({ state: 'loading', msg: 'Memuat Database...' });
             const [isSearching, setIsSearching] = useState(false);
             const [searchSource, setSearchSource] = useState(null); 
             const [result, setResult] = useState(null);
+            const [matchedQuestion, setMatchedQuestion] = useState(null);
             const [isDarkMode, setIsDarkMode] = useState(true);
 
             useEffect(() => {
@@ -347,6 +344,15 @@
                     alert("Gagal mengubah kode.");
                 }
             };
+            
+            const handlePaste = async () => {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    setQuery(text);
+                } catch (err) {
+                    alert('Gagal akses clipboard. Silakan paste manual (Tahan layarnya / Ctrl+V).');
+                }
+            };
 
             const handleSearch = async (e) => {
                 e.preventDefault();
@@ -355,29 +361,42 @@
                 setIsSearching(true);
                 setResult(null);
                 setSearchSource(null);
+                setMatchedQuestion(null);
 
-                // Cari lokal
+                // 1. CARI DI LOKAL DB TERLEBIH DAHULU (Prioritas Utama)
                 const normalize = (str) => str.toLowerCase().replace(/[^\w\s]/g, '').trim();
                 const normQuery = normalize(query);
-                let bestMatch = null; let highestScore = 0;
+                let bestMatch = null; 
+                let matchedQ = null;
+                let highestScore = 0;
                 
                 for (const [q, a] of Object.entries(db)) {
                     const normQ = normalize(q);
-                    if (normQ === normQuery) { bestMatch = a; break; }
+                    if (normQ === normQuery) { 
+                        bestMatch = a; 
+                        matchedQ = q;
+                        break; 
+                    }
                     if (normQ.includes(normQuery) || normQuery.includes(normQ)) {
                         const score = Math.min(normQ.length, normQuery.length) / Math.max(normQ.length, normQuery.length);
-                        if (score > highestScore) { highestScore = score; bestMatch = a; }
+                        if (score > highestScore) { 
+                            highestScore = score; 
+                            bestMatch = a; 
+                            matchedQ = q;
+                        }
                     }
                 }
                 
                 const dbMatch = highestScore > 0.25 ? bestMatch : null;
 
                 if (dbMatch) {
+                    // Berhasil ditemukan di Database
                     setResult(dbMatch);
+                    setMatchedQuestion(matchedQ);
                     setSearchSource('db');
                     setIsSearching(false);
                 } else {
-                    // Logic Pemanggilan AI
+                    // 2. JIKA TIDAK ADA DI DB LOKAL -> Cek Role untuk akses AI
                     if (userRole === 'admin' || userRole === 'private') {
                         setSearchSource('ai');
                         try {
@@ -388,16 +407,16 @@
                             });
                             const data = await response.json();
                             
-                            // Handling Error API Gemini agar ditampilkan detail aslinya
                             if (response.ok) {
                                 setResult(data.answer);
                             } else {
                                 setResult(`⚠️ Error AI Server: ${data.error || 'Terjadi kesalahan internal server.'}`);
                             }
                         } catch(e) { 
-                            setResult("⚠️ Gagal menghubungi server backend. Pastikan koneksi internet stabil."); 
+                            setResult(`⚠️ Gagal menghubungi server AI backend. Detail: ${e.message}`); 
                         }
                     } else {
+                        // Publik tidak punya akses AI
                         setSearchSource('not-found');
                         setResult("Maaf, jawaban tidak ditemukan di database Bank Soal.");
                     }
@@ -564,11 +583,26 @@
                             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                                 <SearchIcon className="w-5 h-5 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
                             </div>
+                            
                             <input
                                 type="text" value={query} onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Masukkan soal ujian / kuis di sini..."
-                                className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-slate-300/50 dark:border-slate-700/50 rounded-2xl py-4 pl-12 pr-28 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all shadow-xl"
+                                className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-slate-300/50 dark:border-slate-700/50 rounded-2xl py-4 pl-12 pr-32 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all shadow-xl"
                             />
+                            
+                            {/* TOGGLE PASTE/HAPUS (Hanya tampil di Desktop/Lebar layar tertentu agar rapi) */}
+                            <div className="absolute inset-y-2 right-[5.5rem] flex items-center justify-center">
+                                {query ? (
+                                    <button type="button" onClick={() => setQuery('')} className="p-2 text-slate-400 hover:text-rose-500 transition-colors bg-slate-100 dark:bg-slate-800 rounded-lg" title="Hapus Teks">
+                                        <XIcon className="w-5 h-5" />
+                                    </button>
+                                ) : (
+                                    <button type="button" onClick={handlePaste} className="p-2 text-slate-400 hover:text-sky-500 transition-colors bg-slate-100 dark:bg-slate-800 rounded-lg" title="Paste Soal">
+                                        <ClipboardIcon className="w-5 h-5" />
+                                    </button>
+                                )}
+                            </div>
+
                             <div className="absolute inset-y-2 right-2 flex items-center gap-2">
                                 <button type="submit" disabled={isSearching || !query.trim()} className="h-full px-5 bg-sky-500 hover:bg-sky-400 text-white rounded-xl font-medium transition-all disabled:opacity-50">
                                     Cari
@@ -581,7 +615,7 @@
                                 <div className="h-14 w-14 rounded-full bg-indigo-500/10 flex items-center justify-center">
                                     <SparklesIcon className="w-6 h-6 text-indigo-400 animate-pulse" />
                                 </div>
-                                <h3 className="text-sm font-medium text-indigo-300 mb-1">Mencari via AI & Web Search...</h3>
+                                <h3 className="text-sm font-medium text-indigo-800 dark:text-indigo-300 mb-1">Mencari via AI & Web Search...</h3>
                                 <div className="typing-indicator text-indigo-500 dark:text-indigo-400/50">
                                     <span></span><span></span><span></span>
                                 </div>
@@ -590,8 +624,37 @@
 
                         {result && !isSearching && (
                             <div className="w-full flex flex-col gap-4 animate-in slide-in-from-bottom-4">
+                                <div className="flex items-center gap-2">
+                                    {searchSource === 'db' && (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                            <DatabaseIcon className="w-3.5 h-3.5" /> Ditemukan di Database (Lokal)
+                                        </span>
+                                    )}
+                                    {searchSource === 'ai' && (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                                            <SparklesIcon className="w-3.5 h-3.5" /> Ditemukan via AI
+                                        </span>
+                                    )}
+                                    {searchSource === 'not-found' && (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                                            <AlertIcon className="w-3.5 h-3.5" /> Database Kosong
+                                        </span>
+                                    )}
+                                </div>
+
                                 <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
                                     <div className="relative z-10">
+                                        {matchedQuestion && searchSource === 'db' && (
+                                            <div className="mb-4 pb-4 border-b border-slate-200 dark:border-slate-700/50">
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider font-semibold">Soal Tersimpan</p>
+                                                <p className="text-slate-700 dark:text-slate-300 text-sm">{matchedQuestion}</p>
+                                            </div>
+                                        )}
+                                        
+                                        {searchSource !== 'not-found' && (
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider font-semibold">Jawaban</p>
+                                        )}
+
                                         {searchSource === 'db' || searchSource === 'not-found' ? (
                                             <div className="text-lg md:text-xl font-medium leading-relaxed">
                                                 {result}
