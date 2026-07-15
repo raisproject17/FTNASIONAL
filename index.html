@@ -363,31 +363,6 @@
                 }
             };
 
-            // Handle Perubahan Kode Akses Publik (KHUSUS ADMIN)
-            const handleUpdateKey = async (e) => {
-                e.preventDefault();
-                setModalMsg({ text: 'Menyimpan...', type: 'info' });
-                try {
-                    const res = await fetch('/api/auth', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            action: 'update_public_key', 
-                            newKey: newPublicCode,
-                            adminKey: process.env.ADMIN_ACCESS_KEY // Simulasi validasi admin, Vercel akan membaca aslinya di backend
-                        })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || "Gagal mengubah kode.");
-                    
-                    setModalMsg({ text: 'Kode berhasil diubah! (Berlaku hingga server restart)', type: 'success' });
-                    setNewPublicCode("");
-                    setTimeout(() => setShowModal(false), 2000);
-                } catch (err) {
-                    setModalMsg({ text: err.message, type: 'error' });
-                }
-            };
-
             const handlePaste = async () => {
                 try {
                     const text = await navigator.clipboard.readText();
@@ -473,33 +448,6 @@
             return (
                 <div className="min-h-screen flex flex-col items-center p-4 md:p-8 w-full max-w-3xl mx-auto animate-in fade-in duration-500">
                     
-                    {/* MODAL UBAH KODE AKSES (ADMIN) */}
-                    {showModal && userRole === 'admin' && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-                            <div className="glass-panel w-full max-w-sm p-6 rounded-2xl animate-in zoom-in-95">
-                                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Ubah Kode Publik</h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Buat kode akses baru untuk siswa. (Hanya berlaku sementara hingga server direstart).</p>
-                                
-                                <form onSubmit={handleUpdateKey}>
-                                    <input 
-                                        type="text" value={newPublicCode} onChange={(e)=>setNewPublicCode(e.target.value)}
-                                        placeholder="Ketik kode baru..." required
-                                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl py-2.5 px-4 mb-3 text-slate-800 dark:text-white"
-                                    />
-                                    {modalMsg.text && (
-                                        <div className={`text-sm mb-4 p-2 rounded-lg ${modalMsg.type === 'error' ? 'bg-rose-500/10 text-rose-500' : modalMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-sky-500/10 text-sky-500'}`}>
-                                            {modalMsg.text}
-                                        </div>
-                                    )}
-                                    <div className="flex gap-2 justify-end">
-                                        <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition">Batal</button>
-                                        <button type="submit" className="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-white transition">Simpan</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-
                     {/* Header */}
                     <header className="w-full flex items-center justify-between mb-8 mt-4">
                         <div className="flex items-center gap-3">
@@ -516,11 +464,6 @@
                         </div>
                         
                         <div className="flex items-center gap-2 md:gap-3">
-                            {userRole === 'admin' && (
-                                <button onClick={() => setShowModal(true)} className="p-2 rounded-full hover:bg-sky-100 dark:hover:bg-sky-900/30 text-sky-500 transition-colors" title="Ubah Kode Akses Publik">
-                                    <ShieldIcon className="w-5 h-5" />
-                                </button>
-                            )}
                             <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors" aria-label="Toggle Theme">
                                 {isDarkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
                             </button>
@@ -646,6 +589,3 @@
     </script>
 </body>
 </html>
-
-
-```
