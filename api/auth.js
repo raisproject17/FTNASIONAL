@@ -5,55 +5,50 @@ export default async function handler(req, res) {
 
     try {
         const { action, key, device } = req.body;
-        
-        // Ambil Kunci Admin dan URL Web App GAS dari Vercel Environment Variables
         const envAdminKey = process.env.ADMIN_ACCESS_KEY;
         const gasUrl = process.env.GAS_WEB_APP_URL;
 
         if (!envAdminKey || !gasUrl) {
-            return res.status(500).json({ error: "Vercel Env Variables (ADMIN_ACCESS_KEY / GAS_WEB_APP_URL) belum diatur." });
+            return res.status(500).json({ error: "Vercel Env Variables belum diatur." });
         }
 
-        // NORMALISASI: Pastikan input selalu berupa Teks (String) dan tidak ada spasi tidak terlihat
         const inputKeyStr = String(key || "").trim();
         const adminKeyStr = String(envAdminKey).trim();
 
         let activePublicKey = null;
+        let activePrivateKey = null;
 
-        // Fetch current public key dari Google Apps Script
         if (action === 'verify') {
             try {
                 const gasRes = await fetch(`${gasUrl}?action=get_key`);
                 const gasData = await gasRes.json();
                 
-                // NORMALISASI Kunci Publik
-                if (gasData.key) {
-                    activePublicKey = String(gasData.key).trim();
-                }
+                if (gasData.publicKey) activePublicKey = String(gasData.publicKey).trim();
+                if (gasData.privateKey) activePrivateKey = String(gasData.privateKey).trim();
             } catch (err) {
                 console.error("Gagal mengambil kunci dari GAS:", err);
             }
         }
 
-        // Validasi Kunci
         let role = 'Unknown';
         let statusLog = '🔴 Gagal (Sandi Salah)';
         let isSuccess = false;
 
-        // 1. Cek Sandi Admin
         if (inputKeyStr === adminKeyStr) {
             role = 'admin';
-            statusLog = '🟢 Sukses';
+            statusLog = '🟢 Sukses (Admin)';
             isSuccess = true;
-        } 
-        // 2. Cek Sandi Publik
-        else if (activePublicKey && inputKeyStr === activePublicKey) {
-            role = 'public';
-            statusLog = '🟢 Sukses';
+        } else if (activePrivateKey && inputKeyStr === activePrivateKey) {
+            role = 'private'; // Akses Full AI, Tanpa Dashboard
+            statusLog = '🟢 Sukses (Private)';
+            isSuccess = true;
+        } else if (activePublicKey && inputKeyStr === activePublicKey) {
+            role = 'public'; // Akses Non-AI
+            statusLog = '🟢 Sukses (Public)';
             isSuccess = true;
         }
 
-        // Kirim Log ke GAS (Tidak menggunakan 'await' agar proses login ke aplikasi tidak melambat)
+        // Kirim Log ke GAS (Background process)
         if (action === 'verify') {
             fetch(gasUrl, {
                 method: 'POST',
@@ -67,11 +62,10 @@ export default async function handler(req, res) {
             }).catch(e => console.error("Gagal kirim log:", e));
         }
 
-        // Return hasil ke Frontend
         if (isSuccess) {
             return res.status(200).json({ role });
         } else {
-            return res.status(401).json({ error: 'Kunci Akses salah atau API Keys belum tersinkronisasi.' });
+            return res.status(401).json({ error: 'Kunci Akses salah atau telah direset.' });
         }
 
     } catch (error) {
