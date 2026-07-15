@@ -1,11 +1,9 @@
 export default async function handler(req, res) {
-    // Pastikan metode request adalah POST
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
     try {
-        // Ambil kunci API rahasia yang disimpan aman di setelan Vercel Environment Variables
         const apiKey = process.env.GEMINI_API_KEY;
         
         if (!apiKey) {
@@ -14,18 +12,15 @@ export default async function handler(req, res) {
 
         const { query } = req.body;
         
-        // Menggunakan model gemini-1.5-flash
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // Menggunakan endpoint v1 yang JAUH LEBIH STABIL daripada v1beta
+        // Dan menggunakan model gemini-1.5-flash-latest yang memastikan ketersediaan
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
+        // Payload disederhanakan tanpa 'tools: googleSearch' untuk menghindari error "Not Supported"
         const payload = {
             contents: [{ 
-                parts: [{ text: `Carikan jawaban yang paling tepat, jelas, dan komprehensif untuk pertanyaan kuis/ujian ini. Pertanyaan: "${query}"` }] 
-            }],
-            systemInstruction: { 
-                parts: [{ text: "Anda adalah asisten cerdas. Berikan jawaban yang terstruktur, rapi, dan langsung pada intinya. Gunakan Google Search untuk memastikan informasi terbaru dan paling akurat." }] 
-            },
-            // PENULISAN YANG BENAR UNTUK GEMINI API TERBARU ADALAH googleSearch (camelCase)
-            tools: [{ googleSearch: {} }] 
+                parts: [{ text: `Pertanyaan: "${query}"\n\nTolong berikan jawaban yang paling tepat, ringkas, dan komprehensif untuk pertanyaan kuis ini. Bertindaklah seperti Search Engine yang akurat.` }] 
+            }]
         };
 
         const response = await fetch(url, {
@@ -36,19 +31,17 @@ export default async function handler(req, res) {
 
         const data = await response.json();
         
-        // Menangkap error spesifik dari Google jika ada
         if (!response.ok) {
             console.error("Gemini API Error Detail:", data);
+            // Menangkap error spesifik untuk ditampilkan
             throw new Error(data.error?.message || 'Gagal tersambung dengan server AI Google.');
         }
 
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
         
-        // Kirim jawaban kembali ke aplikasi Frontend kita
-        res.status(200).json({ answer: text || "Maaf, jawaban tidak dapat ditemukan di internet." });
+        res.status(200).json({ answer: text || "Maaf, jawaban tidak dapat diproses oleh AI." });
 
     } catch (error) {
-        // Meneruskan pesan error asli ke frontend agar mudah di-debug
         res.status(500).json({ error: error.message });
     }
 }
