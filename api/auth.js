@@ -1,52 +1,80 @@
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Metode Tidak Diizinkan' });
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Metode Tidak Diizinkan' });
+    }
 
     try {
         const { action, key, device } = req.body;
         
-        const envAdminKey = process.env.ADMIN_ACCESS_KEY; 
-        const gasUrl = process.env.GAS_WEB_APP_URL; // Gunakan URL GAS Web App
+        // Ambil Kunci Admin dan URL Web App GAS dari Vercel Environment Variables
+        const envAdminKey = process.env.ADMIN_ACCESS_KEY;
+        const gasUrl = process.env.GAS_WEB_APP_URL;
 
         if (!envAdminKey || !gasUrl) {
-            return res.status(500).json({ error: "Konfigurasi ADMIN_ACCESS_KEY atau GAS_WEB_APP_URL belum diatur di Vercel." });
+            return res.status(500).json({ error: "Vercel Env Variables (ADMIN_ACCESS_KEY / GAS_WEB_APP_URL) belum diatur." });
         }
 
-        // Helper untuk mencatat log ke Google Sheets (Berjalan di background)
-        const logLogin = async (role, status) => {
-            try {
-                await fetch(gasUrl, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'log_login', role, status, device: device || 'Unknown' }),
-                    headers: { 'Content-Type': 'text/plain' } // GAS Butuh tipe ini untuk doPost JSON
-                });
-            } catch(e) { console.error("Gagal log:", e); }
-        };
+        // NORMALISASI: Pastikan input selalu berupa Teks (String) dan tidak ada spasi tidak terlihat
+        const inputKeyStr = String(key || "").trim();
+        const adminKeyStr = String(envAdminKey).trim();
 
-        // Ambil Data Kunci Terbaru dari GAS (Metode yang Jauh Lebih Aman & Pasti)
-        let currentPublicKey = null;
-        try {
-            const getRes = await fetch(gasUrl);
-            const dataSheet = await getRes.json();
-            currentPublicKey = dataSheet.currentKey;
-        } catch (gasError) {
-            return res.status(500).json({ error: "Gagal menyambung ke Google Apps Script (Sistem Database)." });
-        }
+        let activePublicKey = null;
 
+        // Fetch current public key dari Google Apps Script
         if (action === 'verify') {
-            if (key === envAdminKey) {
-                // Jangan menunggu log selesai (await) agar login admin tetap instan dan cepat
-                logLogin('Admin', '🟢 Sukses');
-                return res.status(200).json({ role: 'admin' });
-            } else if (key === currentPublicKey) {
-                logLogin('Public', '🟢 Sukses');
-                return res.status(200).json({ role: 'public' });
-            } else {
-                logLogin('Unknown', '🔴 Gagal (Sandi Salah)');
-                return res.status(401).json({ error: 'Kunci Akses tidak valid atau telah kadaluarsa.' });
+            try {
+                const gasRes = await fetch(`${gasUrl}?action=get_key`);
+                const gasData = await gasRes.json();
+                
+                // NORMALISASI Kunci Publik
+                if (gasData.key) {
+                    activePublicKey = String(gasData.key).trim();
+                }
+            } catch (err) {
+                console.error("Gagal mengambil kunci dari GAS:", err);
             }
         }
-        return res.status(400).json({ error: 'Aksi tidak dikenal.' });
+
+        // Validasi Kunci
+        let role = 'Unknown';
+        let statusLog = '🔴 Gagal (Sandi Salah)';
+        let isSuccess = false;
+
+        // 1. Cek Sandi Admin
+        if (inputKeyStr === adminKeyStr) {
+            role = 'admin';
+            statusLog = '🟢 Sukses';
+            isSuccess = true;
+        } 
+        // 2. Cek Sandi Publik
+        else if (activePublicKey && inputKeyStr === activePublicKey) {
+            role = 'public';
+            statusLog = '🟢 Sukses';
+            isSuccess = true;
+        }
+
+        // Kirim Log ke GAS (Tidak menggunakan 'await' agar proses login ke aplikasi tidak melambat)
+        if (action === 'verify') {
+            fetch(gasUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'log_login',
+                    device: device || 'Unknown Device',
+                    role: role,
+                    status: statusLog
+                })
+            }).catch(e => console.error("Gagal kirim log:", e));
+        }
+
+        // Return hasil ke Frontend
+        if (isSuccess) {
+            return res.status(200).json({ role });
+        } else {
+            return res.status(401).json({ error: 'Kunci Akses salah atau API Keys belum tersinkronisasi.' });
+        }
+
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: "Terjadi kesalahan sistem: " + error.message });
     }
 }
