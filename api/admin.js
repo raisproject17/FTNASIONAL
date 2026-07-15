@@ -1,36 +1,44 @@
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
-
-    const { action, adminKey, newKey } = req.body;
-    
-    // Validasi Keamanan: Pastikan yang me-request benar-benar Admin
-    const envAdminKey = process.env.ADMIN_ACCESS_KEY;
-    if (adminKey !== envAdminKey) {
-        return res.status(401).json({ error: 'Akses Ditolak: Kunci Admin tidak valid.' });
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Metode Tidak Diizinkan' });
     }
 
-    const gasUrl = process.env.GAS_WEB_APP_URL;
-    if (!gasUrl) return res.status(500).json({ error: 'GAS_WEB_APP_URL belum diatur di Vercel.' });
-
     try {
-        // Ambil Data Dashboard
+        const { action, adminKey, newPublicKey, newPrivateKey } = req.body;
+        
+        // Verifikasi keamanan bahwa yang meminta data benar-benar Admin
+        const envAdminKey = process.env.ADMIN_ACCESS_KEY;
+        if (String(adminKey).trim() !== String(envAdminKey).trim()) {
+            return res.status(401).json({ error: 'Akses Ditolak: Kunci Admin Tidak Valid.' });
+        }
+
+        const gasUrl = process.env.GAS_WEB_APP_URL;
+
         if (action === 'get_dashboard') {
-            const response = await fetch(gasUrl);
-            const data = await response.json();
+            // Ambil data dari GAS Get Default
+            const gasRes = await fetch(gasUrl);
+            const data = await gasRes.json();
             return res.status(200).json(data);
         }
 
-        // Perbarui Kunci Secara Instan
-        if (action === 'update_key') {
-            const response = await fetch(gasUrl, {
+        if (action === 'update_keys') {
+            // Kirim kunci baru ke GAS
+            const gasRes = await fetch(gasUrl, {
                 method: 'POST',
-                body: JSON.stringify({ action: 'update_key', newKey }),
-                headers: { 'Content-Type': 'text/plain' }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'update_keys',
+                    publicKey: newPublicKey,
+                    privateKey: newPrivateKey
+                })
             });
-            const data = await response.json();
+            const data = await gasRes.json();
             return res.status(200).json(data);
         }
+
+        return res.status(400).json({ error: 'Aksi admin tidak valid.' });
+
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: "Terjadi kesalahan sistem: " + error.message });
     }
 }
