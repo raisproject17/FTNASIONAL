@@ -4,46 +4,44 @@ export default async function handler(req, res) {
     try {
         const { action, key, device } = req.body;
         
-        const sheetId = process.env.SECRET_SHEET_ID;
         const envAdminKey = process.env.ADMIN_ACCESS_KEY; 
-        const gasUrl = process.env.GAS_WEB_APP_URL;
+        const gasUrl = process.env.GAS_WEB_APP_URL; // Gunakan URL GAS Web App
 
-        if (!sheetId || !envAdminKey) {
-            return res.status(500).json({ error: "Konfigurasi sistem belum lengkap di Vercel." });
+        if (!envAdminKey || !gasUrl) {
+            return res.status(500).json({ error: "Konfigurasi ADMIN_ACCESS_KEY atau GAS_WEB_APP_URL belum diatur di Vercel." });
         }
 
         // Helper untuk mencatat log ke Google Sheets (Berjalan di background)
         const logLogin = async (role, status) => {
-            if (!gasUrl) return;
             try {
                 await fetch(gasUrl, {
                     method: 'POST',
                     body: JSON.stringify({ action: 'log_login', role, status, device: device || 'Unknown' }),
-                    headers: { 'Content-Type': 'text/plain' }
+                    headers: { 'Content-Type': 'text/plain' } // GAS Butuh tipe ini untuk doPost JSON
                 });
             } catch(e) { console.error("Gagal log:", e); }
         };
 
-        const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=admin`;
-        const response = await fetch(csvUrl);
-        if (!response.ok) throw new Error("Gagal mengambil data dari Google Sheets.");
-        
-        const csvText = await response.text();
+        // Ambil Data Kunci Terbaru dari GAS (Metode yang Jauh Lebih Aman & Pasti)
         let currentPublicKey = null;
-        for (let row of csvText.split('\n')) {
-            const columns = row.split(',').map(col => col.replace(/(^"|"$)/g, '').trim());
-            if (columns[0] === 'PUBLIC_KEY') { currentPublicKey = columns[1]; break; }
+        try {
+            const getRes = await fetch(gasUrl);
+            const dataSheet = await getRes.json();
+            currentPublicKey = dataSheet.currentKey;
+        } catch (gasError) {
+            return res.status(500).json({ error: "Gagal menyambung ke Google Apps Script (Sistem Database)." });
         }
 
         if (action === 'verify') {
             if (key === envAdminKey) {
-                await logLogin('Admin', '🟢 Sukses');
+                // Jangan menunggu log selesai (await) agar login admin tetap instan dan cepat
+                logLogin('Admin', '🟢 Sukses');
                 return res.status(200).json({ role: 'admin' });
             } else if (key === currentPublicKey) {
-                await logLogin('Public', '🟢 Sukses');
+                logLogin('Public', '🟢 Sukses');
                 return res.status(200).json({ role: 'public' });
             } else {
-                await logLogin('Unknown', '🔴 Gagal (Sandi Salah)');
+                logLogin('Unknown', '🔴 Gagal (Sandi Salah)');
                 return res.status(401).json({ error: 'Kunci Akses tidak valid atau telah kadaluarsa.' });
             }
         }
