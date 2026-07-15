@@ -12,20 +12,24 @@ export default async function handler(req, res) {
 
         const { query } = req.body;
         
-        // Menggunakan endpoint v1 yang JAUH LEBIH STABIL daripada v1beta
-        // Dan menggunakan model gemini-1.5-flash-latest yang memastikan ketersediaan
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+        // Menggunakan endpoint v1beta dengan model gemini-1.5-flash
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
 
-        // Payload disederhanakan tanpa 'tools: googleSearch' untuk menghindari error "Not Supported"
         const payload = {
             contents: [{ 
-                parts: [{ text: `Pertanyaan: "${query}"\n\nTolong berikan jawaban yang paling tepat, ringkas, dan komprehensif untuk pertanyaan kuis ini. Bertindaklah seperti Search Engine yang akurat.` }] 
-            }]
+                parts: [{ text: `Carikan jawaban yang paling tepat, jelas, dan komprehensif untuk pertanyaan kuis/ujian ini: "${query}"` }] 
+            }],
+            systemInstruction: { 
+                parts: [{ text: "Anda adalah asisten cerdas pemecah soal. Berikan jawaban yang terstruktur, rapi, dan langsung pada intinya." }] 
+            }
         };
 
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey // Menggunakan header standar terbaru untuk kunci AQ.
+            },
             body: JSON.stringify(payload)
         });
 
@@ -33,7 +37,6 @@ export default async function handler(req, res) {
         
         if (!response.ok) {
             console.error("Gemini API Error Detail:", data);
-            // Menangkap error spesifik untuk ditampilkan
             throw new Error(data.error?.message || 'Gagal tersambung dengan server AI Google.');
         }
 
@@ -42,6 +45,7 @@ export default async function handler(req, res) {
         res.status(200).json({ answer: text || "Maaf, jawaban tidak dapat diproses oleh AI." });
 
     } catch (error) {
+        console.error("AI Search Error:", error);
         res.status(500).json({ error: error.message });
     }
 }
