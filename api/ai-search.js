@@ -14,17 +14,18 @@ export default async function handler(req, res) {
 
         const { query } = req.body;
         
-        // Menggunakan model gemini-1.5-flash-latest yang lebih stabil
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+        // Menggunakan model gemini-1.5-flash
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
         const payload = {
             contents: [{ 
-                parts: [{ text: `Carikan jawaban yang paling tepat, jelas, dan komprehensif untuk pertanyaan ini. Pertanyaan: "${query}"` }] 
+                parts: [{ text: `Carikan jawaban yang paling tepat, jelas, dan komprehensif untuk pertanyaan kuis/ujian ini. Pertanyaan: "${query}"` }] 
             }],
             systemInstruction: { 
-                parts: [{ text: "Anda adalah asisten cerdas pemecah soal. Berikan jawaban yang terstruktur, jelas, dan langsung pada intinya." }] 
-            }
-            // Fitur google_search dihapus sementara untuk mencegah error "not supported" pada akun tier gratis.
+                parts: [{ text: "Anda adalah asisten cerdas. Berikan jawaban yang terstruktur, rapi, dan langsung pada intinya. Gunakan Google Search untuk memastikan informasi terbaru dan paling akurat." }] 
+            },
+            // PENULISAN YANG BENAR UNTUK GEMINI API TERBARU ADALAH googleSearch (camelCase)
+            tools: [{ googleSearch: {} }] 
         };
 
         const response = await fetch(url, {
@@ -35,7 +36,9 @@ export default async function handler(req, res) {
 
         const data = await response.json();
         
+        // Menangkap error spesifik dari Google jika ada
         if (!response.ok) {
+            console.error("Gemini API Error Detail:", data);
             throw new Error(data.error?.message || 'Gagal tersambung dengan server AI Google.');
         }
 
@@ -45,6 +48,7 @@ export default async function handler(req, res) {
         res.status(200).json({ answer: text || "Maaf, jawaban tidak dapat ditemukan di internet." });
 
     } catch (error) {
+        // Meneruskan pesan error asli ke frontend agar mudah di-debug
         res.status(500).json({ error: error.message });
     }
 }
