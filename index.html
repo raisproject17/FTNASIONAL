@@ -8,9 +8,12 @@
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class', }</script>
+    
+    <!-- React, Babel & Parsers -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -28,7 +31,6 @@
         .glass-panel {
             background: rgba(255, 255, 255, 0.6);
             backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
         }
@@ -37,31 +39,17 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
-
         .bg-glow {
-            position: absolute;
-            width: 400px;
-            height: 400px;
+            position: absolute; width: 400px; height: 400px;
             background: radial-gradient(circle, rgba(14,165,233,0.15) 0%, rgba(0,0,0,0) 70%);
-            top: -150px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: -1;
-            pointer-events: none;
+            top: -150px; left: 50%; transform: translateX(-50%); z-index: -1; pointer-events: none;
         }
-
-        .typing-indicator span {
-            animation: blink 1.4s infinite both;
-            height: 6px; width: 6px;
-            background: #38bdf8;
-            border-radius: 50%;
-            display: inline-block;
-            margin: 0 2px;
-        }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes blink { 0% { opacity: 0.2; transform: scale(0.8); } 20% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0.2; transform: scale(0.8); } }
-        .prose p { margin-bottom: 0.75em; } .prose strong { color: #0f172a; font-weight: 600; } html.dark .prose strong { color: #f8fafc; }
+        .prose p { margin-bottom: 0.75em; }
+        .prose strong { color: #0f172a; font-weight: 600; }
+        html.dark .prose strong { color: #f8fafc; }
+        
+        /* Modal Scroll */
+        .modal-scroll { max-height: 60vh; overflow-y: auto; }
     </style>
 </head>
 <body class="text-slate-800 dark:text-slate-200 antialiased min-h-screen relative overflow-x-hidden selection:bg-sky-500/30 transition-colors duration-300">
@@ -71,35 +59,30 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // --- ICONS ---
         const SearchIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
         const DatabaseIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>;
         const CheckIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>;
-        const ErrorIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
         const LoaderIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>;
-        const SparklesIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>;
+        const SparklesIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/></svg>;
         const BookOpenIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
-        const SunIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>;
+        const SunIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M2 12h2"/><path d="m6.34 17.66-1.41 1.41"/></svg>;
         const MoonIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>;
-        const ClipboardIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>;
         const XIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
         const LogOutIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>;
         const KeyIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></svg>;
-        const AlertIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
-        const ChartIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>;
+        const LayoutDashboardIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
         const EyeIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>;
         const EyeOffIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>;
 
         const CACHE_DURATION = 24 * 60 * 60 * 1000;
-        const SESSION_DURATION = 60 * 60 * 1000;
+        const SESSION_DURATION = 60 * 60 * 1000; // 1 Jam batas Public/Private
 
+        // --- SISTEM COOKIE ---
         const setCookie = (name, value, days) => {
-            let expires = "";
-            if (days) {
-                const date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = "; expires=" + date.toUTCString();
-            }
-            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${value || ""}; expires=${date.toUTCString()}; path=/`;
         };
         const getCookie = (name) => {
             const nameEQ = name + "=";
@@ -111,38 +94,44 @@
             }
             return null;
         };
-        
-        const getDeviceString = () => {
-            const ua = navigator.userAgent;
-            if (/android/i.test(ua)) return "Android Device";
-            if (/iphone|ipad|ipod/i.test(ua)) return "iOS Device";
-            if (/windows/i.test(ua)) return "Windows PC";
-            if (/mac/i.test(ua)) return "Mac";
-            return "Other Device";
+
+        // --- PELACAK PERANGKAT & IP ---
+        const fetchDeviceDetails = async () => {
+            const os = /Windows|Mac|Linux|Android|iOS/.exec(navigator.userAgent)?.[0] || 'Unknown OS';
+            const browser = /Chrome|Firefox|Safari|Edge|Opera/.exec(navigator.userAgent)?.[0] || 'Unknown Browser';
+            try {
+                // Free API tanpa key, rate limit tinggi
+                const res = await fetch('https://api.db-ip.com/v2/free/self');
+                const data = await res.json();
+                return `IP: ${data.ipAddress} | ${data.city}, ${data.countryName} | ${os} (${browser})`;
+            } catch (e) {
+                return `OS: ${os} | Browser: ${browser} | (IP Gagal Dilacak)`;
+            }
         };
 
-        const dbPromise = () => new Promise((resolve, reject) => {
+        // --- LOKAL DB ---
+        const dbPromise = () => new Promise((res, rej) => {
             const request = indexedDB.open('SmartQuizDB', 1);
-            request.onerror = () => reject(request.error);
-            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => rej(request.error);
+            request.onsuccess = () => res(request.result);
             request.onupgradeneeded = (e) => e.target.result.createObjectStore('store');
         });
         const setVal = async (key, val) => {
             const db = await dbPromise();
-            return new Promise((resolve, reject) => {
+            return new Promise((res, rej) => {
                 const tx = db.transaction('store', 'readwrite');
                 tx.objectStore('store').put(val, key);
-                tx.oncomplete = () => resolve();
-                tx.onerror = () => reject(tx.error);
+                tx.oncomplete = () => res();
+                tx.onerror = () => rej(tx.error);
             });
         };
         const getVal = async (key) => {
             const db = await dbPromise();
-            return new Promise((resolve, reject) => {
+            return new Promise((res, rej) => {
                 const tx = db.transaction('store', 'readonly');
                 const req = tx.objectStore('store').get(key);
-                req.onsuccess = () => resolve(req.result);
-                req.onerror = () => reject(req.error);
+                req.onsuccess = () => res(req.result);
+                req.onerror = () => rej(req.error);
             });
         };
 
@@ -152,28 +141,29 @@
         };
 
         const App = () => {
-            const [userRole, setUserRole] = useState(null);
+            const [userRole, setUserRole] = useState(null); // 'admin', 'private', 'public'
             const [inputKey, setInputKey] = useState("");
+            const [showPassword, setShowPassword] = useState(false);
             const [loginError, setLoginError] = useState("");
             const [isAuthenticating, setIsAuthenticating] = useState(false);
             const [authLoading, setAuthLoading] = useState(true);
-            const [showPassword, setShowPassword] = useState(false); // STATE BARU UNTUK TOGGLE SANDI
 
-            // Tampilan (Search / Dashboard)
-            const [activeView, setActiveView] = useState('search'); 
-            
-            // Dashboard Data
-            const [dashData, setDashData] = useState({ currentKey: '', logs: [] });
-            const [isDashLoading, setIsDashLoading] = useState(false);
+            // Admin Dashboard States
+            const [showDashboard, setShowDashboard] = useState(false);
+            const [adminData, setAdminData] = useState(null);
+            const [adminLoading, setAdminLoading] = useState(false);
+            const [dashboardTab, setDashboardTab] = useState('logs'); // 'logs' or 'keys'
+            const [filterDate, setFilterDate] = useState(""); 
+            const [newPub, setNewPub] = useState("");
+            const [newPriv, setNewPriv] = useState("");
 
-            // Search Data
+            // Data States
             const [query, setQuery] = useState("");
             const [db, setDb] = useState({});
             const [dbStatus, setDbStatus] = useState({ state: 'loading', msg: 'Memuat Database...' });
             const [isSearching, setIsSearching] = useState(false);
             const [searchSource, setSearchSource] = useState(null); 
             const [result, setResult] = useState(null);
-            const [matchedQuestion, setMatchedQuestion] = useState(null);
             const [isDarkMode, setIsDarkMode] = useState(true);
 
             useEffect(() => {
@@ -182,14 +172,13 @@
 
                 if (role === 'admin') {
                     setUserRole('admin');
-                } else if (role === 'public') {
+                } else if (role === 'public' || role === 'private') {
                     const now = Date.now();
                     if (loginTime && (now - parseInt(loginTime) < SESSION_DURATION)) {
-                        setUserRole('public');
+                        setUserRole(role);
                     } else {
                         localStorage.removeItem('session_role');
                         localStorage.removeItem('session_time');
-                        alert("Sesi Kunci Publik Anda telah habis (1 Jam). Batas login perangkat adalah 1x dalam 24 jam.");
                     }
                 }
                 setAuthLoading(false);
@@ -201,31 +190,35 @@
                 setIsAuthenticating(true);
 
                 try {
+                    const deviceInfo = await fetchDeviceDetails();
+                    
                     const res = await fetch('/api/auth', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'verify', key: inputKey, device: getDeviceString() })
+                        body: JSON.stringify({ action: 'verify', key: inputKey, device: deviceInfo })
                     });
                     const data = await res.json();
                     
-                    if (!res.ok) throw new Error(data.error || "Terjadi kesalahan server.");
+                    if (!res.ok) throw new Error(data.error || "Gagal menghubungi server.");
                     
                     if (data.role === 'admin') {
                         localStorage.setItem('session_role', 'admin');
-                        localStorage.setItem('admin_token', inputKey); // Simpan sementara untuk akses API Dashboard
                         setUserRole('admin');
-                    } else if (data.role === 'public') {
-                        const isLockedOut = getCookie('public_lockout');
-                        if (isLockedOut === 'true') {
-                            setLoginError("Akses ditolak: Perangkat ini telah mencapai batas login (1x dalam 24 jam). Silakan coba lagi besok.");
+                        localStorage.setItem('admin_temp_key', inputKey); // Simpan untuk aksi dashboard
+                    } 
+                    else if (data.role === 'public' || data.role === 'private') {
+                        // CEK LIMIT 1X PER HARI
+                        const lockoutKey = `lockout_${data.role}`;
+                        if (getCookie(lockoutKey) === 'true') {
+                            setLoginError(`Akses Ditolak: Anda telah menggunakan sesi tipe [${data.role.toUpperCase()}] hari ini. Batas 1 perangkat 1x /24 jam.`);
                             setIsAuthenticating(false);
-                            return; 
+                            return;
                         }
-
-                        setCookie('public_lockout', 'true', 1);
-                        localStorage.setItem('session_role', 'public');
+                        
+                        setCookie(lockoutKey, 'true', 1);
+                        localStorage.setItem('session_role', data.role);
                         localStorage.setItem('session_time', Date.now().toString());
-                        setUserRole('public');
+                        setUserRole(data.role);
                     }
                 } catch (err) {
                     setLoginError(err.message);
@@ -237,66 +230,11 @@
             const handleLogout = () => {
                 localStorage.removeItem('session_role');
                 localStorage.removeItem('session_time');
-                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_temp_key');
                 setUserRole(null);
-                setActiveView('search');
+                setShowDashboard(false);
             };
 
-            const fetchDashboard = async () => {
-                setIsDashLoading(true);
-                try {
-                    const adminToken = localStorage.getItem('admin_token');
-                    const res = await fetch('/api/admin', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'get_dashboard', adminKey: adminToken })
-                    });
-                    const data = await res.json();
-                    if (res.ok) {
-                        setDashData(data);
-                    } else {
-                        alert(data.error || "Gagal memuat dashboard");
-                    }
-                } catch (err) {
-                    alert("Koneksi ke server bermasalah.");
-                } finally {
-                    setIsDashLoading(false);
-                }
-            };
-
-            const handleGenerateNewKey = async () => {
-                const randomKey = Math.floor(10000 + Math.random() * 90000).toString();
-                setIsDashLoading(true);
-                try {
-                    const adminToken = localStorage.getItem('admin_token');
-                    const res = await fetch('/api/admin', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'update_key', adminKey: adminToken, newKey: randomKey })
-                    });
-                    if (res.ok) {
-                        alert(`Sukses! Kunci Publik telah diubah menjadi: ${randomKey}`);
-                        fetchDashboard(); 
-                    } else {
-                        alert("Gagal mereset kunci.");
-                    }
-                } catch (err) {
-                    alert("Koneksi bermasalah.");
-                } finally {
-                    setIsDashLoading(false);
-                }
-            };
-
-            const toggleView = () => {
-                if (activeView === 'search') {
-                    setActiveView('dashboard');
-                    fetchDashboard();
-                } else {
-                    setActiveView('search');
-                }
-            };
-
-            // Initialize Theme
             useEffect(() => {
                 const savedTheme = localStorage.getItem('theme');
                 setIsDarkMode(savedTheme !== 'light');
@@ -312,7 +250,7 @@
                 }
             }, [isDarkMode]);
 
-            // Load Database
+            // Load DB Google Sheets
             useEffect(() => {
                 if (!userRole) return; 
                 const fetchDatabase = async () => {
@@ -326,17 +264,9 @@
                         }
 
                         setDbStatus({ state: 'loading', msg: 'Mengunduh data baru...' });
-                        
-                        let csvText = "";
-                        try {
-                            const response = await fetch('/api/get-sheet');
-                            if (!response.ok) throw new Error("API tidak ditemukan");
-                            csvText = await response.text();
-                        } catch (apiError) {
-                            const FALLBACK_ID = '10Xr6T9yTjfCTvMLurGzxe82gZ1QHbgEimYhEIBnlQp0';
-                            const response = await fetch(`https://docs.google.com/spreadsheets/d/${FALLBACK_ID}/export?format=csv`);
-                            csvText = await response.text();
-                        }
+                        const response = await fetch('/api/get-sheet');
+                        if (!response.ok) throw new Error("Gagal akses spreadsheet");
+                        const csvText = await response.text();
 
                         Papa.parse(csvText, {
                             complete: async (results) => {
@@ -348,9 +278,12 @@
                                         if (q && a) { newDb[q] = a; }
                                     }
                                 });
-                                try { await setVal('quiz_db', newDb); await setVal('quiz_db_time', Date.now()); } catch (e) {}
+                                try {
+                                    await setVal('quiz_db', newDb);
+                                    await setVal('quiz_db_time', Date.now());
+                                } catch (e) {}
                                 setDb(newDb);
-                                setDbStatus({ state: 'success', msg: `Tersimpan (${Object.keys(newDb).length} Data)` });
+                                setDbStatus({ state: 'success', msg: `Tersimpan (${Object.keys(newDb).length})` });
                             }
                         });
                     } catch (err) {
@@ -360,34 +293,45 @@
                 fetchDatabase();
             }, [userRole]);
 
-            const searchLocalDB = (searchQuery, database) => {
-                const normalize = (str) => str.toLowerCase().replace(/[^\w\s]/g, '').trim();
-                const normQuery = normalize(searchQuery);
-                if (!normQuery) return null;
-                let bestMatch = null;
-                let highestScore = 0;
-                for (const [q, a] of Object.entries(database)) {
-                    const normQ = normalize(q);
-                    if (normQ === normQuery) return { q, a };
-                    if (normQ.includes(normQuery) || normQuery.includes(normQ)) {
-                        const score = Math.min(normQ.length, normQuery.length) / Math.max(normQ.length, normQuery.length);
-                        if (score > highestScore) { highestScore = score; bestMatch = { q, a }; }
-                    }
-                }
-                return highestScore > 0.25 ? bestMatch : null;
-            };
-
-            const fetchAIFallback = async (searchQuery) => {
+            // Open Dashboard Data
+            const openDashboard = async () => {
+                setShowDashboard(true);
+                setAdminLoading(true);
                 try {
-                    const response = await fetch('/api/ai-search', {
+                    const res = await fetch('/api/admin', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ query: searchQuery })
+                        body: JSON.stringify({ action: 'get_dashboard', adminKey: localStorage.getItem('admin_temp_key') })
                     });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.error || 'Kesalahan Server');
-                    return data.answer;
-                } catch (error) { return `Kendala merayapi internet: ${error.message}.`; }
+                    const data = await res.json();
+                    if(!res.ok) throw new Error(data.error);
+                    setAdminData(data);
+                    setNewPub(data.publicKey || "");
+                    setNewPriv(data.privateKey || "");
+                } catch (e) {
+                    alert(e.message);
+                } finally {
+                    setAdminLoading(false);
+                }
+            };
+
+            const updateKeys = async (e) => {
+                e.preventDefault();
+                try {
+                    const res = await fetch('/api/admin', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            action: 'update_keys', 
+                            adminKey: localStorage.getItem('admin_temp_key'),
+                            newPublicKey: newPub,
+                            newPrivateKey: newPriv
+                        })
+                    });
+                    if(res.ok) alert("Kode berhasil diubah!");
+                } catch(e) {
+                    alert("Gagal mengubah kode.");
+                }
             };
 
             const handleSearch = async (e) => {
@@ -397,20 +341,39 @@
                 setIsSearching(true);
                 setResult(null);
                 setSearchSource(null);
-                setMatchedQuestion(null);
 
-                const dbMatch = searchLocalDB(query, db);
+                // Cari lokal
+                const normalize = (str) => str.toLowerCase().replace(/[^\w\s]/g, '').trim();
+                const normQuery = normalize(query);
+                let bestMatch = null; let highestScore = 0;
                 
+                for (const [q, a] of Object.entries(db)) {
+                    const normQ = normalize(q);
+                    if (normQ === normQuery) { bestMatch = a; break; }
+                    if (normQ.includes(normQuery) || normQuery.includes(normQ)) {
+                        const score = Math.min(normQ.length, normQuery.length) / Math.max(normQ.length, normQuery.length);
+                        if (score > highestScore) { highestScore = score; bestMatch = a; }
+                    }
+                }
+                
+                const dbMatch = highestScore > 0.25 ? bestMatch : null;
+
                 if (dbMatch) {
-                    setResult(dbMatch.a);
-                    setMatchedQuestion(dbMatch.q);
+                    setResult(dbMatch);
                     setSearchSource('db');
                     setIsSearching(false);
                 } else {
-                    if (userRole === 'admin') {
+                    if (userRole === 'admin' || userRole === 'private') {
                         setSearchSource('ai');
-                        const aiAnswer = await fetchAIFallback(query);
-                        setResult(aiAnswer);
+                        try {
+                            const response = await fetch('/api/ai-search', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ query })
+                            });
+                            const data = await response.json();
+                            setResult(response.ok ? data.answer : "Error jaringan AI.");
+                        } catch(e) { setResult("Gagal menghubungi server AI."); }
                     } else {
                         setSearchSource('not-found');
                         setResult("Maaf, jawaban tidak ditemukan di database Bank Soal.");
@@ -421,6 +384,7 @@
 
             if (authLoading) return <div className="min-h-screen flex items-center justify-center"><LoaderIcon className="w-8 h-8 animate-spin text-sky-500" /></div>;
 
+            // --- LOCK SCREEN ---
             if (!userRole) {
                 return (
                     <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -431,32 +395,30 @@
                             <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-slate-400 bg-clip-text text-transparent mb-2">Akses Terkunci</h1>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">Masukkan Kunci Akses untuk membuka Search Engine.</p>
                             
-                            <form onSubmit={handleLogin} className="w-full">
-                                <div className="relative mb-4">
-                                    <input 
-                                        type={showPassword ? "text" : "password"} 
-                                        value={inputKey} 
-                                        onChange={(e) => setInputKey(e.target.value)} 
-                                        placeholder="Masukkan Kunci Akses..." 
-                                        required 
-                                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl py-3 pl-4 pr-12 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500" 
+                            <form onSubmit={handleLogin} className="w-full relative">
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        value={inputKey}
+                                        onChange={(e) => setInputKey(e.target.value)}
+                                        placeholder="Masukkan Kunci..."
+                                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl py-3 pl-4 pr-12 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 mb-4"
+                                        required
                                     />
                                     <button 
                                         type="button" 
-                                        onClick={() => setShowPassword(!showPassword)} 
-                                        className="absolute inset-y-0 right-0 px-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none"
-                                        aria-label="Toggle Password Visibility"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                                     >
-                                        {showPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                                        {showPassword ? <EyeOffIcon className="w-5 h-5"/> : <EyeIcon className="w-5 h-5"/>}
                                     </button>
                                 </div>
-
                                 {loginError && (
-                                    <div className="text-rose-500 text-sm mb-4 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20 flex items-start gap-2 text-left">
-                                        <AlertIcon className="w-5 h-5 flex-shrink-0 mt-0.5" /><span>{loginError}</span>
+                                    <div className="text-rose-500 text-sm mb-4 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20 text-left">
+                                        {loginError}
                                     </div>
                                 )}
-                                <button type="submit" disabled={isAuthenticating || !inputKey.trim()} className="w-full py-3 px-4 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white rounded-xl font-medium transition-all flex items-center justify-center shadow-sm">
+                                <button type="submit" disabled={isAuthenticating || !inputKey.trim()} className="w-full py-3 px-4 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white rounded-xl font-medium transition-all flex items-center justify-center">
                                     {isAuthenticating ? <LoaderIcon className="w-5 h-5 animate-spin" /> : "Buka Akses"}
                                 </button>
                             </form>
@@ -465,182 +427,162 @@
                 );
             }
 
+            // --- DASHBOARD ADMIN MODAL ---
+            if (showDashboard && userRole === 'admin') {
+                // Filter Kalender
+                let displayedLogs = adminData?.logs || [];
+                if (filterDate) {
+                    // filterDate format "YYYY-MM-DD", Timestamp format "DD/MM/YYYY"
+                    const [y, m, d] = filterDate.split('-');
+                    const targetFormat = `${d}/${m}/${y}`;
+                    displayedLogs = displayedLogs.filter(log => log[0].startsWith(targetFormat));
+                }
+                // Hanya 20 teratas dari hasil filter
+                displayedLogs = displayedLogs.slice(0, 20);
+
+                return (
+                    <div className="min-h-screen p-4 md:p-8 flex justify-center">
+                        <div className="w-full max-w-4xl glass-panel rounded-3xl p-6 flex flex-col h-fit">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold flex items-center gap-2"><LayoutDashboardIcon className="w-6 h-6 text-sky-500"/> Admin Dashboard</h2>
+                                <button onClick={() => setShowDashboard(false)} className="text-slate-500 hover:text-slate-800 dark:hover:text-white"><XIcon className="w-6 h-6"/></button>
+                            </div>
+
+                            <div className="flex gap-4 mb-6 border-b border-slate-300 dark:border-slate-700">
+                                <button onClick={() => setDashboardTab('logs')} className={`pb-2 px-2 font-medium ${dashboardTab === 'logs' ? 'text-sky-500 border-b-2 border-sky-500' : 'text-slate-500'}`}>Riwayat Login (20)</button>
+                                <button onClick={() => setDashboardTab('keys')} className={`pb-2 px-2 font-medium ${dashboardTab === 'keys' ? 'text-sky-500 border-b-2 border-sky-500' : 'text-slate-500'}`}>Kelola Kunci Akses</button>
+                            </div>
+
+                            {adminLoading ? (
+                                <div className="py-20 flex justify-center"><LoaderIcon className="w-8 h-8 animate-spin text-sky-500" /></div>
+                            ) : dashboardTab === 'keys' ? (
+                                <form onSubmit={updateKeys} className="space-y-4 max-w-md">
+                                    <div>
+                                        <label className="text-xs font-semibold text-slate-500 mb-1 block">Public Key (Tanpa AI)</label>
+                                        <input type="text" value={newPub} onChange={e=>setNewPub(e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold text-slate-500 mb-1 block">Private Key (Full AI)</label>
+                                        <input type="text" value={newPriv} onChange={e=>setNewPriv(e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5" />
+                                    </div>
+                                    <button type="submit" className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium">Update Kunci</button>
+                                </form>
+                            ) : (
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <label className="text-sm font-medium">Filter Tanggal:</label>
+                                        <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-sm" />
+                                        {filterDate && <button onClick={() => setFilterDate('')} className="text-xs bg-rose-500/20 text-rose-500 px-2 py-1 rounded">Reset</button>}
+                                    </div>
+                                    <div className="overflow-x-auto modal-scroll bg-white/50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs uppercase sticky top-0">
+                                                <tr>
+                                                    <th className="px-4 py-3">Waktu (WIB)</th>
+                                                    <th className="px-4 py-3">Perangkat / IP Lokasi</th>
+                                                    <th className="px-4 py-3">Role</th>
+                                                    <th className="px-4 py-3">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                                                {displayedLogs.map((log, i) => (
+                                                    <tr key={i} className="hover:bg-white dark:hover:bg-slate-800">
+                                                        <td className="px-4 py-3 whitespace-nowrap">{log[0]}</td>
+                                                        <td className="px-4 py-3 text-xs">{log[1]}</td>
+                                                        <td className="px-4 py-3 font-medium">{log[2]}</td>
+                                                        <td className="px-4 py-3">{log[3]}</td>
+                                                    </tr>
+                                                ))}
+                                                {displayedLogs.length === 0 && (
+                                                    <tr><td colSpan="4" className="text-center py-6 text-slate-500">Tidak ada data login pada tanggal tersebut.</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            }
+
+            // --- TAMPILAN SEARCH ENGINE (UTAMA) ---
             return (
-                <div className="min-h-screen flex flex-col items-center p-4 md:p-8 w-full max-w-3xl mx-auto animate-in fade-in duration-500">
-                    
-                    {/* Header */}
+                <div className="min-h-screen flex flex-col items-center p-4 md:p-8 w-full max-w-3xl mx-auto animate-in fade-in">
                     <header className="w-full flex items-center justify-between mb-8 mt-4">
                         <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-xl bg-sky-500/10 dark:bg-sky-500/20 flex items-center justify-center border border-sky-500/20 dark:border-sky-500/30">
-                                <BookOpenIcon className="text-sky-500 dark:text-sky-400 w-6 h-6" />
+                            <div className="h-10 w-10 rounded-xl bg-sky-500/10 dark:bg-sky-500/20 flex items-center justify-center border border-sky-500/20">
+                                <BookOpenIcon className="text-sky-500 w-6 h-6" />
                             </div>
                             <div>
                                 <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">BANK-FT</h1>
-                                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                                <p className="text-xs font-semibold text-slate-500 flex items-center gap-1 mt-0.5">
                                     <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                                    {userRole === 'admin' ? "Sesi Admin" : "Sesi Publik (1 Jam)"}
+                                    {userRole === 'admin' ? "Sesi Admin" : userRole === 'private' ? "Sesi Private (Full AI)" : "Sesi Publik (1 Jam)"}
                                 </p>
                             </div>
                         </div>
                         
                         <div className="flex items-center gap-2 md:gap-3">
                             {userRole === 'admin' && (
-                                <button onClick={toggleView} className={`p-2 rounded-full transition-colors ${activeView === 'dashboard' ? 'bg-sky-500 text-white shadow-md' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400'}`} title="Dashboard Admin">
-                                    <ChartIcon className="w-5 h-5" />
+                                <button onClick={openDashboard} className="p-2 rounded-full hover:bg-sky-100 dark:hover:bg-sky-900/30 text-sky-500 transition-colors" title="Dashboard">
+                                    <LayoutDashboardIcon className="w-5 h-5" />
                                 </button>
                             )}
-                            <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors" aria-label="Toggle Theme">
+                            <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors">
                                 {isDarkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
                             </button>
                             <button onClick={handleLogout} className="p-2 rounded-full hover:bg-rose-100 dark:hover:bg-rose-900/30 text-rose-500 transition-colors" title="Keluar">
                                 <LogOutIcon className="w-5 h-5" />
                             </button>
-                            <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border glass-panel
-                                ${dbStatus.state === 'success' ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500/20 bg-emerald-500/10' : 
-                                  dbStatus.state === 'error' ? 'text-rose-600 dark:text-rose-400 border-rose-500/20 bg-rose-500/10' : 
-                                  'text-sky-600 dark:text-sky-400 border-sky-500/20 bg-sky-500/10'}`}>
-                                {dbStatus.state === 'loading' && <LoaderIcon className="w-3.5 h-3.5 animate-spin" />}
-                                {dbStatus.state === 'success' && <CheckIcon className="w-3.5 h-3.5" />}
-                                {dbStatus.state === 'error' && <ErrorIcon className="w-3.5 h-3.5" />}
-                                <span>{dbStatus.msg}</span>
-                            </div>
                         </div>
                     </header>
 
-                    {/* View Switcher: Dashboard VS Search Engine */}
-                    {activeView === 'dashboard' ? (
-                        <main className="w-full flex-1 flex flex-col gap-6 animate-in slide-in-from-bottom-4 duration-300">
-                            {isDashLoading ? (
-                                <div className="glass-panel rounded-2xl p-12 flex flex-col items-center justify-center">
-                                    <LoaderIcon className="w-8 h-8 text-sky-500 animate-spin mb-4" />
-                                    <p className="text-slate-500">Menyinkronkan data dari Spreadsheet...</p>
-                                </div>
-                            ) : (
-                                <>
-                                    {/* Panel Kunci */}
-                                    <div className="glass-panel rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-sky-500/30 shadow-[0_4px_30px_rgba(14,165,233,0.1)]">
-                                        <div>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Kunci Publik Saat Ini:</p>
-                                            <p className="text-4xl font-mono font-bold text-sky-500 tracking-[0.2em] mt-1">{dashData.currentKey || '----'}</p>
-                                        </div>
-                                        <button onClick={handleGenerateNewKey} className="w-full md:w-auto px-6 py-3 bg-rose-500 hover:bg-rose-400 text-white rounded-xl font-medium transition-all shadow-sm flex items-center justify-center gap-2">
-                                            <KeyIcon className="w-5 h-5" /> Ganti Kunci Acak
-                                        </button>
-                                    </div>
+                    <main className="w-full flex-1 flex flex-col items-center">
+                        <form onSubmit={handleSearch} className="w-full relative group z-10 mb-8">
+                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                <SearchIcon className="w-5 h-5 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
+                            </div>
+                            <input
+                                type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+                                placeholder="Masukkan soal ujian / kuis di sini..."
+                                className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-slate-300/50 dark:border-slate-700/50 rounded-2xl py-4 pl-12 pr-28 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all shadow-xl"
+                            />
+                            <div className="absolute inset-y-2 right-2 flex items-center gap-2">
+                                <button type="submit" disabled={isSearching || !query.trim()} className="h-full px-5 bg-sky-500 hover:bg-sky-400 text-white rounded-xl font-medium transition-all disabled:opacity-50">
+                                    Cari
+                                </button>
+                            </div>
+                        </form>
 
-                                    {/* Panel Tabel Log */}
-                                    <div className="glass-panel rounded-3xl p-1 overflow-hidden">
-                                        <div className="p-5 border-b border-slate-200 dark:border-slate-800">
-                                            <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
-                                                <DatabaseIcon className="w-5 h-5 text-sky-500" /> Riwayat Login (50 Terakhir)
-                                            </h3>
-                                        </div>
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-sm text-left">
-                                                <thead className="bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
-                                                    <tr>
-                                                        <th className="p-4 font-semibold whitespace-nowrap">Waktu (WIB)</th>
-                                                        <th className="p-4 font-semibold">Perangkat</th>
-                                                        <th className="p-4 font-semibold">Role</th>
-                                                        <th className="p-4 font-semibold">Status</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {dashData.logs.length === 0 ? (
-                                                        <tr><td colSpan="4" className="p-8 text-center text-slate-500">Belum ada data aktivitas login.</td></tr>
-                                                    ) : (
-                                                        dashData.logs.map((log, idx) => (
-                                                            <tr key={idx} className="border-b border-slate-200 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors text-slate-700 dark:text-slate-300">
-                                                                <td className="p-4 whitespace-nowrap">{log[0]}</td>
-                                                                <td className="p-4">{log[1]}</td>
-                                                                <td className="p-4 font-medium">{log[2]}</td>
-                                                                <td className="p-4">
-                                                                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${log[3].includes('Sukses') ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'}`}>
-                                                                        {log[3]}
-                                                                    </span>
-                                                                </td>
-                                                            </tr>
-                                                        ))
-                                                    )}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </main>
-                    ) : (
-                        <main className="w-full flex-1 flex flex-col items-center animate-in slide-in-from-bottom-4 duration-300">
-                            <form onSubmit={handleSearch} className="w-full relative group z-10 mb-8">
-                                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                    <SearchIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 group-focus-within:text-sky-500 transition-colors" />
+                        {isSearching && searchSource === 'ai' && (
+                            <div className="w-full glass-panel rounded-2xl p-6 flex flex-col items-center space-y-4 animate-in zoom-in">
+                                <div className="h-14 w-14 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                                    <SparklesIcon className="w-6 h-6 text-indigo-400 animate-pulse" />
                                 </div>
-                                <input
-                                    type="text" value={query} onChange={(e) => setQuery(e.target.value)}
-                                    placeholder="Masukkan soal ujian / kuis di sini..."
-                                    className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-slate-300/50 dark:border-slate-700/50 rounded-2xl py-4 pl-12 pr-40 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/50 transition-all shadow-xl"
-                                />
-                                <div className="absolute inset-y-2 right-2 flex items-center gap-2">
-                                    {query ? (
-                                        <button type="button" onClick={() => setQuery('')} className="p-2 text-slate-400 hover:text-rose-500 transition-colors bg-slate-100 dark:bg-slate-800 rounded-lg" title="Hapus"><XIcon className="w-5 h-5" /></button>
-                                    ) : (
-                                        <button type="button" onClick={async () => {try {setQuery(await navigator.clipboard.readText())} catch(e) {alert('Paste manual via keyboard ya.')}}} className="p-2 text-slate-400 hover:text-sky-500 transition-colors bg-slate-100 dark:bg-slate-800 rounded-lg" title="Paste Soal"><ClipboardIcon className="w-5 h-5" /></button>
-                                    )}
-                                    <button type="submit" disabled={isSearching || !query.trim()} className="h-full px-5 bg-sky-500 hover:bg-sky-400 text-white rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">Cari</button>
-                                </div>
-                            </form>
+                                <h3 className="text-sm font-medium text-indigo-300 mb-1">Mencari via AI...</h3>
+                            </div>
+                        )}
 
-                            {isSearching && searchSource === 'ai' && (
-                                <div className="w-full glass-panel rounded-2xl p-6 flex flex-col items-center justify-center space-y-4 animate-in fade-in zoom-in duration-300">
-                                    <div className="h-14 w-14 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                                        <SparklesIcon className="w-6 h-6 text-indigo-400 animate-pulse" />
-                                    </div>
-                                    <div className="text-center">
-                                        <h3 className="text-sm font-medium text-indigo-800 dark:text-indigo-300 mb-1">Mencari via AI & Web (Mode Admin)</h3>
-                                        <div className="typing-indicator text-indigo-500 dark:text-indigo-400/50"><span></span><span></span><span></span></div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {result && !isSearching && (
-                                <div className="w-full flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <div className="flex items-center gap-2">
-                                        {searchSource === 'db' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"><DatabaseIcon className="w-3.5 h-3.5" /> Ditemukan di Database</span>}
-                                        {searchSource === 'ai' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"><SparklesIcon className="w-3.5 h-3.5" /> Ditemukan via AI Search</span>}
-                                        {searchSource === 'not-found' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"><AlertIcon className="w-3.5 h-3.5" /> Database Kosong</span>}
-                                    </div>
-                                    <div className={`glass-panel rounded-2xl p-6 relative overflow-hidden group ${searchSource === 'not-found' ? 'border-rose-500/20' : ''}`}>
-                                        <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl opacity-20 transition-opacity ${searchSource === 'db' ? 'bg-emerald-500' : searchSource === 'ai' ? 'bg-indigo-500' : 'bg-rose-500'}`}></div>
-                                        {matchedQuestion && searchSource === 'db' && (
-                                            <div className="mb-4 pb-4 border-b border-slate-200 dark:border-slate-700/50">
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider font-semibold">Soal Tersimpan</p>
-                                                <p className="text-slate-700 dark:text-slate-300 text-sm">{matchedQuestion}</p>
+                        {result && !isSearching && (
+                            <div className="w-full flex flex-col gap-4 animate-in slide-in-from-bottom-4">
+                                <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
+                                    <div className="relative z-10">
+                                        {searchSource === 'db' || searchSource === 'not-found' ? (
+                                            <div className="text-lg md:text-xl font-medium leading-relaxed">
+                                                {result}
                                             </div>
+                                        ) : (
+                                            <MarkdownDisplay content={result} />
                                         )}
-                                        <div className="relative z-10">
-                                            {searchSource !== 'not-found' && <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider font-semibold">Jawaban</p>}
-                                            {searchSource === 'db' || searchSource === 'not-found' ? (
-                                                <div className={`text-lg md:text-xl font-medium leading-relaxed ${searchSource === 'not-found' ? 'text-rose-600 dark:text-rose-400 text-base' : 'text-slate-800 dark:text-white'}`}>{result}</div>
-                                            ) : (<MarkdownDisplay content={result} />)}
-                                        </div>
                                     </div>
                                 </div>
-                            )}
-                            
-                            {!result && !isSearching && query === "" && (
-                                <div className="flex flex-col items-center justify-center text-slate-500 mt-12 opacity-80 dark:opacity-60">
-                                    <DatabaseIcon className="w-12 h-12 mb-4 text-slate-400 dark:text-slate-600" />
-                                    <p className="text-center text-sm max-w-sm text-slate-600 dark:text-slate-400">
-                                        Cari jawaban dari database lokal Bank Soal. <br/>{userRole === 'admin' ? "Mode AI Aktif (Otomatis jika tidak ada di DB)." : ""}
-                                    </p>
-                                </div>
-                            )}
-                        </main>
-                    )}
+                            </div>
+                        )}
+                    </main>
                 </div>
             );
         };
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
