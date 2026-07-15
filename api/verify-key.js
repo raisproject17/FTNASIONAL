@@ -1,4 +1,3 @@
-```javascript
 // Variabel cache-memory untuk menyimpan kode publik baru yang dibuat Admin
 // Catatan: Ini akan reset ke kunci asli (dari Env Variables) jika server Vercel mengalami restart/cold-start.
 let dynamicPublicKey = null; 
