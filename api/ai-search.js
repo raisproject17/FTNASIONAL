@@ -14,17 +14,17 @@ export default async function handler(req, res) {
 
         const { query } = req.body;
         
-        // Memanggil API Gemini versi stabil dengan Search Engine Google
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // Menggunakan model gemini-1.5-flash-latest yang lebih stabil
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
         const payload = {
             contents: [{ 
-                parts: [{ text: `Carikan jawaban yang paling tepat, jelas, dan komprehensif untuk pertanyaan kuis ini. Pertanyaan: "${query}"` }] 
+                parts: [{ text: `Carikan jawaban yang paling tepat, jelas, dan komprehensif untuk pertanyaan ini. Pertanyaan: "${query}"` }] 
             }],
             systemInstruction: { 
-                parts: [{ text: "Anda adalah asisten cerdas pemecah soal kuis. Berikan jawaban yang terstruktur dan langsung pada intinya. Wajib gunakan google search jika Anda butuh referensi tambahan agar jawaban akurat." }] 
-            },
-            tools: [{ google_search: {} }]
+                parts: [{ text: "Anda adalah asisten cerdas pemecah soal. Berikan jawaban yang terstruktur, jelas, dan langsung pada intinya." }] 
+            }
+            // Fitur google_search dihapus sementara untuk mencegah error "not supported" pada akun tier gratis.
         };
 
         const response = await fetch(url, {
