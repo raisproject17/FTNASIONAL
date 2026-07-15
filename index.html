@@ -44,6 +44,23 @@
             background: radial-gradient(circle, rgba(14,165,233,0.15) 0%, rgba(0,0,0,0) 70%);
             top: -150px; left: 50%; transform: translateX(-50%); z-index: -1; pointer-events: none;
         }
+        
+        .typing-indicator span {
+            animation: blink 1.4s infinite both;
+            height: 6px; width: 6px;
+            background: #38bdf8;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink {
+            0% { opacity: 0.2; transform: scale(0.8); }
+            20% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.2; transform: scale(0.8); }
+        }
+
         .prose p { margin-bottom: 0.75em; }
         .prose strong { color: #0f172a; font-weight: 600; }
         html.dark .prose strong { color: #f8fafc; }
@@ -74,6 +91,7 @@
         const LayoutDashboardIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
         const EyeIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>;
         const EyeOffIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>;
+        const AlertIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
 
         const CACHE_DURATION = 24 * 60 * 60 * 1000;
         const SESSION_DURATION = 60 * 60 * 1000; // 1 Jam batas Public/Private
@@ -100,7 +118,6 @@
             const os = /Windows|Mac|Linux|Android|iOS/.exec(navigator.userAgent)?.[0] || 'Unknown OS';
             const browser = /Chrome|Firefox|Safari|Edge|Opera/.exec(navigator.userAgent)?.[0] || 'Unknown Browser';
             try {
-                // Free API tanpa key, rate limit tinggi
                 const res = await fetch('https://api.db-ip.com/v2/free/self');
                 const data = await res.json();
                 return `IP: ${data.ipAddress} | ${data.city}, ${data.countryName} | ${os} (${browser})`;
@@ -152,7 +169,7 @@
             const [showDashboard, setShowDashboard] = useState(false);
             const [adminData, setAdminData] = useState(null);
             const [adminLoading, setAdminLoading] = useState(false);
-            const [dashboardTab, setDashboardTab] = useState('logs'); // 'logs' or 'keys'
+            const [dashboardTab, setDashboardTab] = useState('logs'); 
             const [filterDate, setFilterDate] = useState(""); 
             const [newPub, setNewPub] = useState("");
             const [newPriv, setNewPriv] = useState("");
@@ -204,10 +221,9 @@
                     if (data.role === 'admin') {
                         localStorage.setItem('session_role', 'admin');
                         setUserRole('admin');
-                        localStorage.setItem('admin_temp_key', inputKey); // Simpan untuk aksi dashboard
+                        localStorage.setItem('admin_temp_key', inputKey); 
                     } 
                     else if (data.role === 'public' || data.role === 'private') {
-                        // CEK LIMIT 1X PER HARI
                         const lockoutKey = `lockout_${data.role}`;
                         if (getCookie(lockoutKey) === 'true') {
                             setLoginError(`Akses Ditolak: Anda telah menggunakan sesi tipe [${data.role.toUpperCase()}] hari ini. Batas 1 perangkat 1x /24 jam.`);
@@ -250,7 +266,6 @@
                 }
             }, [isDarkMode]);
 
-            // Load DB Google Sheets
             useEffect(() => {
                 if (!userRole) return; 
                 const fetchDatabase = async () => {
@@ -293,7 +308,6 @@
                 fetchDatabase();
             }, [userRole]);
 
-            // Open Dashboard Data
             const openDashboard = async () => {
                 setShowDashboard(true);
                 setAdminLoading(true);
@@ -363,6 +377,7 @@
                     setSearchSource('db');
                     setIsSearching(false);
                 } else {
+                    // Logic Pemanggilan AI
                     if (userRole === 'admin' || userRole === 'private') {
                         setSearchSource('ai');
                         try {
@@ -372,8 +387,16 @@
                                 body: JSON.stringify({ query })
                             });
                             const data = await response.json();
-                            setResult(response.ok ? data.answer : "Error jaringan AI.");
-                        } catch(e) { setResult("Gagal menghubungi server AI."); }
+                            
+                            // Handling Error API Gemini agar ditampilkan detail aslinya
+                            if (response.ok) {
+                                setResult(data.answer);
+                            } else {
+                                setResult(`⚠️ Error AI Server: ${data.error || 'Terjadi kesalahan internal server.'}`);
+                            }
+                        } catch(e) { 
+                            setResult("⚠️ Gagal menghubungi server backend. Pastikan koneksi internet stabil."); 
+                        }
                     } else {
                         setSearchSource('not-found');
                         setResult("Maaf, jawaban tidak ditemukan di database Bank Soal.");
@@ -414,8 +437,9 @@
                                     </button>
                                 </div>
                                 {loginError && (
-                                    <div className="text-rose-500 text-sm mb-4 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20 text-left">
-                                        {loginError}
+                                    <div className="text-rose-500 text-sm mb-4 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20 text-left flex items-start gap-2">
+                                        <AlertIcon className="w-5 h-5 flex-shrink-0" />
+                                        <span>{loginError}</span>
                                     </div>
                                 )}
                                 <button type="submit" disabled={isAuthenticating || !inputKey.trim()} className="w-full py-3 px-4 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white rounded-xl font-medium transition-all flex items-center justify-center">
@@ -429,15 +453,12 @@
 
             // --- DASHBOARD ADMIN MODAL ---
             if (showDashboard && userRole === 'admin') {
-                // Filter Kalender
                 let displayedLogs = adminData?.logs || [];
                 if (filterDate) {
-                    // filterDate format "YYYY-MM-DD", Timestamp format "DD/MM/YYYY"
                     const [y, m, d] = filterDate.split('-');
                     const targetFormat = `${d}/${m}/${y}`;
                     displayedLogs = displayedLogs.filter(log => log[0].startsWith(targetFormat));
                 }
-                // Hanya 20 teratas dari hasil filter
                 displayedLogs = displayedLogs.slice(0, 20);
 
                 return (
@@ -560,7 +581,10 @@
                                 <div className="h-14 w-14 rounded-full bg-indigo-500/10 flex items-center justify-center">
                                     <SparklesIcon className="w-6 h-6 text-indigo-400 animate-pulse" />
                                 </div>
-                                <h3 className="text-sm font-medium text-indigo-300 mb-1">Mencari via AI...</h3>
+                                <h3 className="text-sm font-medium text-indigo-300 mb-1">Mencari via AI & Web Search...</h3>
+                                <div className="typing-indicator text-indigo-500 dark:text-indigo-400/50">
+                                    <span></span><span></span><span></span>
+                                </div>
                             </div>
                         )}
 
