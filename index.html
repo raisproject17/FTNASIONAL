@@ -8,20 +8,12 @@
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link id="pwa-manifest" rel="manifest" />
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { darkMode: 'class', }
-    </script>
     
-    <!-- React & Babel -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class', }</script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Parser & Markdown -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
@@ -68,17 +60,8 @@
         }
         .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes blink {
-            0% { opacity: 0.2; transform: scale(0.8); }
-            20% { opacity: 1; transform: scale(1.2); }
-            100% { opacity: 0.2; transform: scale(0.8); }
-        }
-
-        .prose p { margin-bottom: 0.75em; }
-        .prose strong { color: #0f172a; font-weight: 600; }
-        html.dark .prose strong { color: #f8fafc; }
-        .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.75em; }
-        .prose li { margin-bottom: 0.25em; }
+        @keyframes blink { 0% { opacity: 0.2; transform: scale(0.8); } 20% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0.2; transform: scale(0.8); } }
+        .prose p { margin-bottom: 0.75em; } .prose strong { color: #0f172a; font-weight: 600; } html.dark .prose strong { color: #f8fafc; }
     </style>
 </head>
 <body class="text-slate-800 dark:text-slate-200 antialiased min-h-screen relative overflow-x-hidden selection:bg-sky-500/30 transition-colors duration-300">
@@ -86,9 +69,8 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect } = React;
 
-        // --- ICON COMPONENTS ---
         const SearchIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
         const DatabaseIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>;
         const CheckIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>;
@@ -102,13 +84,12 @@
         const XIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
         const LogOutIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>;
         const KeyIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></svg>;
-        const ShieldIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2-1 4-2 7-2 2.5 0 4.5 1 6.5 2a1 1 0 0 1 1 1z"/></svg>;
         const AlertIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
+        const ChartIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>;
 
-        const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 Jam
-        const SESSION_DURATION = 60 * 60 * 1000; // 1 Jam batas login publik
+        const CACHE_DURATION = 24 * 60 * 60 * 1000;
+        const SESSION_DURATION = 60 * 60 * 1000;
 
-        // --- Sistem Cookies untuk Limitasi ---
         const setCookie = (name, value, days) => {
             let expires = "";
             if (days) {
@@ -128,16 +109,22 @@
             }
             return null;
         };
-
-        // Utility DB Lokal
-        const dbPromise = () => {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open('SmartQuizDB', 1);
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => resolve(request.result);
-                request.onupgradeneeded = (e) => e.target.result.createObjectStore('store');
-            });
+        
+        const getDeviceString = () => {
+            const ua = navigator.userAgent;
+            if (/android/i.test(ua)) return "Android Device";
+            if (/iphone|ipad|ipod/i.test(ua)) return "iOS Device";
+            if (/windows/i.test(ua)) return "Windows PC";
+            if (/mac/i.test(ua)) return "Mac";
+            return "Other Device";
         };
+
+        const dbPromise = () => new Promise((resolve, reject) => {
+            const request = indexedDB.open('SmartQuizDB', 1);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result);
+            request.onupgradeneeded = (e) => e.target.result.createObjectStore('store');
+        });
         const setVal = async (key, val) => {
             const db = await dbPromise();
             return new Promise((resolve, reject) => {
@@ -163,19 +150,20 @@
         };
 
         const App = () => {
-            // State Auth Key
-            const [userRole, setUserRole] = useState(null); // 'admin' | 'public' | null
+            const [userRole, setUserRole] = useState(null);
             const [inputKey, setInputKey] = useState("");
             const [loginError, setLoginError] = useState("");
             const [isAuthenticating, setIsAuthenticating] = useState(false);
             const [authLoading, setAuthLoading] = useState(true);
 
-            // State Modal Admin (Ubah Kode Akses)
-            const [showModal, setShowModal] = useState(false);
-            const [newPublicCode, setNewPublicCode] = useState("");
-            const [modalMsg, setModalMsg] = useState({ text: '', type: '' });
+            // Tampilan (Search / Dashboard)
+            const [activeView, setActiveView] = useState('search'); 
+            
+            // Dashboard Data
+            const [dashData, setDashData] = useState({ currentKey: '', logs: [] });
+            const [isDashLoading, setIsDashLoading] = useState(false);
 
-            // State Data DB
+            // Search Data
             const [query, setQuery] = useState("");
             const [db, setDb] = useState({});
             const [dbStatus, setDbStatus] = useState({ state: 'loading', msg: 'Memuat Database...' });
@@ -185,7 +173,6 @@
             const [matchedQuestion, setMatchedQuestion] = useState(null);
             const [isDarkMode, setIsDarkMode] = useState(true);
 
-            // 1. Cek Sesi & Cookies
             useEffect(() => {
                 const role = localStorage.getItem('session_role');
                 const loginTime = localStorage.getItem('session_time');
@@ -197,7 +184,6 @@
                     if (loginTime && (now - parseInt(loginTime) < SESSION_DURATION)) {
                         setUserRole('public');
                     } else {
-                        // Sesi publik expired secara waktu (1 jam habis)
                         localStorage.removeItem('session_role');
                         localStorage.removeItem('session_time');
                         alert("Sesi Kunci Publik Anda telah habis (1 Jam). Batas login perangkat adalah 1x dalam 24 jam.");
@@ -206,7 +192,6 @@
                 setAuthLoading(false);
             }, []);
 
-            // Handle Login form
             const handleLogin = async (e) => {
                 e.preventDefault();
                 setLoginError("");
@@ -216,25 +201,24 @@
                     const res = await fetch('/api/auth', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'verify', key: inputKey })
+                        body: JSON.stringify({ action: 'verify', key: inputKey, device: getDeviceString() })
                     });
                     const data = await res.json();
                     
-                    if (!res.ok) throw new Error(data.error || "Terjadi kesalahan pada server.");
+                    if (!res.ok) throw new Error(data.error || "Terjadi kesalahan server.");
                     
                     if (data.role === 'admin') {
                         localStorage.setItem('session_role', 'admin');
+                        localStorage.setItem('admin_token', inputKey); // Simpan sementara untuk akses API Dashboard
                         setUserRole('admin');
                     } else if (data.role === 'public') {
-                        // CEK LIMITASI 1X 24 JAM
                         const isLockedOut = getCookie('public_lockout');
                         if (isLockedOut === 'true') {
                             setLoginError("Akses ditolak: Perangkat ini telah mencapai batas login (1x dalam 24 jam). Silakan coba lagi besok.");
                             setIsAuthenticating(false);
-                            return; // Batalkan proses login
+                            return; 
                         }
 
-                        // JIKA LOLOS: Berikan Sesi 1 jam & Tulis Cookie larangan selama 1 hari (24 Jam)
                         setCookie('public_lockout', 'true', 1);
                         localStorage.setItem('session_role', 'public');
                         localStorage.setItem('session_time', Date.now().toString());
@@ -250,10 +234,66 @@
             const handleLogout = () => {
                 localStorage.removeItem('session_role');
                 localStorage.removeItem('session_time');
+                localStorage.removeItem('admin_token');
                 setUserRole(null);
+                setActiveView('search');
             };
 
-            // 2. Initialize theme
+            const fetchDashboard = async () => {
+                setIsDashLoading(true);
+                try {
+                    const adminToken = localStorage.getItem('admin_token');
+                    const res = await fetch('/api/admin', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'get_dashboard', adminKey: adminToken })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        setDashData(data);
+                    } else {
+                        alert(data.error || "Gagal memuat dashboard");
+                    }
+                } catch (err) {
+                    alert("Koneksi ke server bermasalah.");
+                } finally {
+                    setIsDashLoading(false);
+                }
+            };
+
+            const handleGenerateNewKey = async () => {
+                const randomKey = Math.floor(10000 + Math.random() * 90000).toString();
+                setIsDashLoading(true);
+                try {
+                    const adminToken = localStorage.getItem('admin_token');
+                    const res = await fetch('/api/admin', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'update_key', adminKey: adminToken, newKey: randomKey })
+                    });
+                    if (res.ok) {
+                        alert(`Sukses! Kunci Publik telah diubah menjadi: ${randomKey}`);
+                        fetchDashboard(); 
+                    } else {
+                        alert("Gagal mereset kunci.");
+                    }
+                } catch (err) {
+                    alert("Koneksi bermasalah.");
+                } finally {
+                    setIsDashLoading(false);
+                }
+            };
+
+            const toggleView = () => {
+                if (activeView === 'search') {
+                    setActiveView('dashboard');
+                    fetchDashboard();
+                } else {
+                    setActiveView('search');
+                }
+            };
+
+            // Initialize Theme
             useEffect(() => {
                 const savedTheme = localStorage.getItem('theme');
                 setIsDarkMode(savedTheme !== 'light');
@@ -269,15 +309,13 @@
                 }
             }, [isDarkMode]);
 
-            // 3. Load Database (Hanya jika role user terautentikasi)
+            // Load Database
             useEffect(() => {
                 if (!userRole) return; 
-
                 const fetchDatabase = async () => {
                     try {
                         const cached = await getVal('quiz_db');
                         const cacheTime = await getVal('quiz_db_time');
-
                         if (cached && cacheTime && (Date.now() - cacheTime < CACHE_DURATION)) {
                             setDb(cached);
                             setDbStatus({ state: 'success', msg: `Tercache (${Object.keys(cached).length} Data)` });
@@ -289,14 +327,12 @@
                         let csvText = "";
                         try {
                             const response = await fetch('/api/get-sheet');
-                            if (!response.ok) throw new Error("API Route tidak ditemukan");
+                            if (!response.ok) throw new Error("API tidak ditemukan");
                             csvText = await response.text();
                         } catch (apiError) {
                             const FALLBACK_ID = '10Xr6T9yTjfCTvMLurGzxe82gZ1QHbgEimYhEIBnlQp0';
-                            const fallbackUrl = `https://docs.google.com/spreadsheets/d/${FALLBACK_ID}/export?format=csv`;
-                            const fallbackResponse = await fetch(fallbackUrl);
-                            if (!fallbackResponse.ok) throw new Error("Gagal akses spreadsheet");
-                            csvText = await fallbackResponse.text();
+                            const response = await fetch(`https://docs.google.com/spreadsheets/d/${FALLBACK_ID}/export?format=csv`);
+                            csvText = await response.text();
                         }
 
                         Papa.parse(csvText, {
@@ -309,22 +345,15 @@
                                         if (q && a) { newDb[q] = a; }
                                     }
                                 });
-                                
-                                try {
-                                    await setVal('quiz_db', newDb);
-                                    await setVal('quiz_db_time', Date.now());
-                                } catch (e) {}
-
+                                try { await setVal('quiz_db', newDb); await setVal('quiz_db_time', Date.now()); } catch (e) {}
                                 setDb(newDb);
                                 setDbStatus({ state: 'success', msg: `Tersimpan (${Object.keys(newDb).length} Data)` });
-                            },
-                            error: (err) => { throw err; }
+                            }
                         });
                     } catch (err) {
                         setDbStatus({ state: 'error', msg: 'Gagal memuat DB' });
                     }
                 };
-
                 fetchDatabase();
             }, [userRole]);
 
@@ -345,7 +374,6 @@
                 return highestScore > 0.25 ? bestMatch : null;
             };
 
-            // 4. API Search AI Call (KHUSUS ADMIN)
             const fetchAIFallback = async (searchQuery) => {
                 try {
                     const response = await fetch('/api/ai-search', {
@@ -353,23 +381,10 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ query: searchQuery })
                     });
-                    
                     const data = await response.json();
-                    if (!response.ok) throw new Error(data.error || 'Terjadi kesalahan pada Server');
+                    if (!response.ok) throw new Error(data.error || 'Kesalahan Server');
                     return data.answer;
-                } catch (error) {
-                    console.error(error);
-                    return `Terjadi kendala saat merayapi internet: ${error.message}.`;
-                }
-            };
-
-            const handlePaste = async () => {
-                try {
-                    const text = await navigator.clipboard.readText();
-                    setQuery(text);
-                } catch (err) {
-                    alert('Gagal akses clipboard. Silakan gunakan Ctrl+V atau Paste manual.');
-                }
+                } catch (error) { return `Kendala merayapi internet: ${error.message}.`; }
             };
 
             const handleSearch = async (e) => {
@@ -384,20 +399,16 @@
                 const dbMatch = searchLocalDB(query, db);
                 
                 if (dbMatch) {
-                    // Ditemukan di Database (Untuk Publik & Admin)
                     setResult(dbMatch.a);
                     setMatchedQuestion(dbMatch.q);
                     setSearchSource('db');
                     setIsSearching(false);
                 } else {
-                    // Tidak Ditemukan di Database
                     if (userRole === 'admin') {
-                        // Admin: Lanjut Search Web AI
                         setSearchSource('ai');
                         const aiAnswer = await fetchAIFallback(query);
                         setResult(aiAnswer);
                     } else {
-                        // Publik: Cukup tampilkan tidak ditemukan
                         setSearchSource('not-found');
                         setResult("Maaf, jawaban tidak ditemukan di database Bank Soal.");
                     }
@@ -405,11 +416,8 @@
                 }
             };
 
-            if (authLoading) {
-                return <div className="min-h-screen flex items-center justify-center"><LoaderIcon className="w-8 h-8 animate-spin text-sky-500" /></div>;
-            }
+            if (authLoading) return <div className="min-h-screen flex items-center justify-center"><LoaderIcon className="w-8 h-8 animate-spin text-sky-500" /></div>;
 
-            // TAMPILAN LOCK SCREEN
             if (!userRole) {
                 return (
                     <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -421,18 +429,10 @@
                             <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">Masukkan Kunci Akses untuk membuka Search Engine.</p>
                             
                             <form onSubmit={handleLogin} className="w-full">
-                                <input
-                                    type="password"
-                                    value={inputKey}
-                                    onChange={(e) => setInputKey(e.target.value)}
-                                    placeholder="Masukkan Kunci Akses..."
-                                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 mb-4"
-                                    required
-                                />
+                                <input type="password" value={inputKey} onChange={(e) => setInputKey(e.target.value)} placeholder="Masukkan Kunci Akses..." required className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 mb-4" />
                                 {loginError && (
                                     <div className="text-rose-500 text-sm mb-4 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20 flex items-start gap-2 text-left">
-                                        <AlertIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                                        <span>{loginError}</span>
+                                        <AlertIcon className="w-5 h-5 flex-shrink-0 mt-0.5" /><span>{loginError}</span>
                                     </div>
                                 )}
                                 <button type="submit" disabled={isAuthenticating || !inputKey.trim()} className="w-full py-3 px-4 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white rounded-xl font-medium transition-all flex items-center justify-center shadow-sm">
@@ -444,7 +444,6 @@
                 );
             }
 
-            // TAMPILAN UTAMA
             return (
                 <div className="min-h-screen flex flex-col items-center p-4 md:p-8 w-full max-w-3xl mx-auto animate-in fade-in duration-500">
                     
@@ -458,12 +457,17 @@
                                 <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">BANK-FT</h1>
                                 <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                                     <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                                    {userRole === 'admin' ? "Sesi Admin (Permanen)" : "Sesi Publik (Aktif 1 Jam)"}
+                                    {userRole === 'admin' ? "Sesi Admin" : "Sesi Publik (1 Jam)"}
                                 </p>
                             </div>
                         </div>
                         
                         <div className="flex items-center gap-2 md:gap-3">
+                            {userRole === 'admin' && (
+                                <button onClick={toggleView} className={`p-2 rounded-full transition-colors ${activeView === 'dashboard' ? 'bg-sky-500 text-white shadow-md' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400'}`} title="Dashboard Admin">
+                                    <ChartIcon className="w-5 h-5" />
+                                </button>
+                            )}
                             <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors" aria-label="Toggle Theme">
                                 {isDarkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
                             </button>
@@ -482,104 +486,136 @@
                         </div>
                     </header>
 
-                    {/* Search Section */}
-                    <main className="w-full flex-1 flex flex-col items-center">
-                        <form onSubmit={handleSearch} className="w-full relative group z-10 mb-8">
-                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                <SearchIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 group-focus-within:text-sky-500 transition-colors" />
-                            </div>
-                            <input
-                                type="text" value={query} onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Masukkan soal ujian / kuis di sini..."
-                                className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-slate-300/50 dark:border-slate-700/50 rounded-2xl py-4 pl-12 pr-40 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/50 transition-all shadow-xl"
-                            />
-                            <div className="absolute inset-y-2 right-2 flex items-center gap-2">
-                                {query ? (
-                                    <button type="button" onClick={() => setQuery('')} className="p-2 text-slate-400 hover:text-rose-500 transition-colors bg-slate-100 dark:bg-slate-800 rounded-lg" title="Hapus">
-                                        <XIcon className="w-5 h-5" />
-                                    </button>
-                                ) : (
-                                    <button type="button" onClick={handlePaste} className="p-2 text-slate-400 hover:text-sky-500 transition-colors bg-slate-100 dark:bg-slate-800 rounded-lg" title="Paste Soal">
-                                        <ClipboardIcon className="w-5 h-5" />
-                                    </button>
-                                )}
-                                <button type="submit" disabled={isSearching || !query.trim()} className="h-full px-5 bg-sky-500 hover:bg-sky-400 text-white rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
-                                    Cari
-                                </button>
-                            </div>
-                        </form>
-
-                        {/* Loading State AI (Admin) */}
-                        {isSearching && searchSource === 'ai' && (
-                            <div className="w-full glass-panel rounded-2xl p-6 flex flex-col items-center justify-center space-y-4 animate-in fade-in zoom-in duration-300">
-                                <div className="h-14 w-14 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                                    <SparklesIcon className="w-6 h-6 text-indigo-400 animate-pulse" />
+                    {/* View Switcher: Dashboard VS Search Engine */}
+                    {activeView === 'dashboard' ? (
+                        <main className="w-full flex-1 flex flex-col gap-6 animate-in slide-in-from-bottom-4 duration-300">
+                            {isDashLoading ? (
+                                <div className="glass-panel rounded-2xl p-12 flex flex-col items-center justify-center">
+                                    <LoaderIcon className="w-8 h-8 text-sky-500 animate-spin mb-4" />
+                                    <p className="text-slate-500">Menyinkronkan data dari Spreadsheet...</p>
                                 </div>
-                                <div className="text-center">
-                                    <h3 className="text-sm font-medium text-indigo-800 dark:text-indigo-300 mb-1">Mencari via AI & Web (Mode Admin)</h3>
-                                    <div className="typing-indicator text-indigo-500 dark:text-indigo-400/50">
-                                        <span></span><span></span><span></span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Result Section */}
-                        {result && !isSearching && (
-                            <div className="w-full flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="flex items-center gap-2">
-                                    {searchSource === 'db' && (
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                            <DatabaseIcon className="w-3.5 h-3.5" /> Ditemukan di Database
-                                        </span>
-                                    )}
-                                    {searchSource === 'ai' && (
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                                            <SparklesIcon className="w-3.5 h-3.5" /> Ditemukan via AI Search
-                                        </span>
-                                    )}
-                                    {searchSource === 'not-found' && (
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-                                            <AlertIcon className="w-3.5 h-3.5" /> Database Kosong
-                                        </span>
-                                    )}
-                                </div>
-
-                                <div className={`glass-panel rounded-2xl p-6 relative overflow-hidden group ${searchSource === 'not-found' ? 'border-rose-500/20' : ''}`}>
-                                    <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl opacity-20 transition-opacity 
-                                        ${searchSource === 'db' ? 'bg-emerald-500' : searchSource === 'ai' ? 'bg-indigo-500' : 'bg-rose-500'}`}>
-                                    </div>
-                                    
-                                    {matchedQuestion && searchSource === 'db' && (
-                                        <div className="mb-4 pb-4 border-b border-slate-200 dark:border-slate-700/50">
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider font-semibold">Soal Tersimpan</p>
-                                            <p className="text-slate-700 dark:text-slate-300 text-sm">{matchedQuestion}</p>
+                            ) : (
+                                <>
+                                    {/* Panel Kunci */}
+                                    <div className="glass-panel rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-sky-500/30 shadow-[0_4px_30px_rgba(14,165,233,0.1)]">
+                                        <div>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Kunci Publik Saat Ini:</p>
+                                            <p className="text-4xl font-mono font-bold text-sky-500 tracking-[0.2em] mt-1">{dashData.currentKey || '----'}</p>
                                         </div>
+                                        <button onClick={handleGenerateNewKey} className="w-full md:w-auto px-6 py-3 bg-rose-500 hover:bg-rose-400 text-white rounded-xl font-medium transition-all shadow-sm flex items-center justify-center gap-2">
+                                            <KeyIcon className="w-5 h-5" /> Ganti Kunci Acak
+                                        </button>
+                                    </div>
+
+                                    {/* Panel Tabel Log */}
+                                    <div className="glass-panel rounded-3xl p-1 overflow-hidden">
+                                        <div className="p-5 border-b border-slate-200 dark:border-slate-800">
+                                            <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                                                <DatabaseIcon className="w-5 h-5 text-sky-500" /> Riwayat Login (50 Terakhir)
+                                            </h3>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm text-left">
+                                                <thead className="bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
+                                                    <tr>
+                                                        <th className="p-4 font-semibold whitespace-nowrap">Waktu (WIB)</th>
+                                                        <th className="p-4 font-semibold">Perangkat</th>
+                                                        <th className="p-4 font-semibold">Role</th>
+                                                        <th className="p-4 font-semibold">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {dashData.logs.length === 0 ? (
+                                                        <tr><td colSpan="4" className="p-8 text-center text-slate-500">Belum ada data aktivitas login.</td></tr>
+                                                    ) : (
+                                                        dashData.logs.map((log, idx) => (
+                                                            <tr key={idx} className="border-b border-slate-200 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors text-slate-700 dark:text-slate-300">
+                                                                <td className="p-4 whitespace-nowrap">{log[0]}</td>
+                                                                <td className="p-4">{log[1]}</td>
+                                                                <td className="p-4 font-medium">{log[2]}</td>
+                                                                <td className="p-4">
+                                                                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${log[3].includes('Sukses') ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'}`}>
+                                                                        {log[3]}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </main>
+                    ) : (
+                        <main className="w-full flex-1 flex flex-col items-center animate-in slide-in-from-bottom-4 duration-300">
+                            <form onSubmit={handleSearch} className="w-full relative group z-10 mb-8">
+                                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                    <SearchIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 group-focus-within:text-sky-500 transition-colors" />
+                                </div>
+                                <input
+                                    type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+                                    placeholder="Masukkan soal ujian / kuis di sini..."
+                                    className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-slate-300/50 dark:border-slate-700/50 rounded-2xl py-4 pl-12 pr-40 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/50 transition-all shadow-xl"
+                                />
+                                <div className="absolute inset-y-2 right-2 flex items-center gap-2">
+                                    {query ? (
+                                        <button type="button" onClick={() => setQuery('')} className="p-2 text-slate-400 hover:text-rose-500 transition-colors bg-slate-100 dark:bg-slate-800 rounded-lg" title="Hapus"><XIcon className="w-5 h-5" /></button>
+                                    ) : (
+                                        <button type="button" onClick={async () => {try {setQuery(await navigator.clipboard.readText())} catch(e) {alert('Paste manual via keyboard ya.')}}} className="p-2 text-slate-400 hover:text-sky-500 transition-colors bg-slate-100 dark:bg-slate-800 rounded-lg" title="Paste Soal"><ClipboardIcon className="w-5 h-5" /></button>
                                     )}
-                                    
-                                    <div className="relative z-10">
-                                        {searchSource !== 'not-found' && <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider font-semibold">Jawaban</p>}
-                                        {searchSource === 'db' || searchSource === 'not-found' ? (
-                                            <div className={`text-lg md:text-xl font-medium leading-relaxed ${searchSource === 'not-found' ? 'text-rose-600 dark:text-rose-400 text-base' : 'text-slate-800 dark:text-white'}`}>
-                                                {result}
-                                            </div>
-                                        ) : (
-                                            <MarkdownDisplay content={result} />
-                                        )}
+                                    <button type="submit" disabled={isSearching || !query.trim()} className="h-full px-5 bg-sky-500 hover:bg-sky-400 text-white rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">Cari</button>
+                                </div>
+                            </form>
+
+                            {isSearching && searchSource === 'ai' && (
+                                <div className="w-full glass-panel rounded-2xl p-6 flex flex-col items-center justify-center space-y-4 animate-in fade-in zoom-in duration-300">
+                                    <div className="h-14 w-14 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                                        <SparklesIcon className="w-6 h-6 text-indigo-400 animate-pulse" />
+                                    </div>
+                                    <div className="text-center">
+                                        <h3 className="text-sm font-medium text-indigo-800 dark:text-indigo-300 mb-1">Mencari via AI & Web (Mode Admin)</h3>
+                                        <div className="typing-indicator text-indigo-500 dark:text-indigo-400/50"><span></span><span></span><span></span></div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
-                        
-                        {!result && !isSearching && query === "" && (
-                            <div className="flex flex-col items-center justify-center text-slate-500 mt-12 opacity-80 dark:opacity-60">
-                                <DatabaseIcon className="w-12 h-12 mb-4 text-slate-400 dark:text-slate-600" />
-                                <p className="text-center text-sm max-w-sm text-slate-600 dark:text-slate-400">
-                                    Cari jawaban dari database lokal Bank Soal. <br/>{userRole === 'admin' ? "Mode AI Aktif (Otomatis jika tidak ada di DB)." : ""}
-                                </p>
-                            </div>
-                        )}
-                    </main>
+                            )}
+
+                            {result && !isSearching && (
+                                <div className="w-full flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="flex items-center gap-2">
+                                        {searchSource === 'db' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"><DatabaseIcon className="w-3.5 h-3.5" /> Ditemukan di Database</span>}
+                                        {searchSource === 'ai' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"><SparklesIcon className="w-3.5 h-3.5" /> Ditemukan via AI Search</span>}
+                                        {searchSource === 'not-found' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"><AlertIcon className="w-3.5 h-3.5" /> Database Kosong</span>}
+                                    </div>
+                                    <div className={`glass-panel rounded-2xl p-6 relative overflow-hidden group ${searchSource === 'not-found' ? 'border-rose-500/20' : ''}`}>
+                                        <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl opacity-20 transition-opacity ${searchSource === 'db' ? 'bg-emerald-500' : searchSource === 'ai' ? 'bg-indigo-500' : 'bg-rose-500'}`}></div>
+                                        {matchedQuestion && searchSource === 'db' && (
+                                            <div className="mb-4 pb-4 border-b border-slate-200 dark:border-slate-700/50">
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider font-semibold">Soal Tersimpan</p>
+                                                <p className="text-slate-700 dark:text-slate-300 text-sm">{matchedQuestion}</p>
+                                            </div>
+                                        )}
+                                        <div className="relative z-10">
+                                            {searchSource !== 'not-found' && <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider font-semibold">Jawaban</p>}
+                                            {searchSource === 'db' || searchSource === 'not-found' ? (
+                                                <div className={`text-lg md:text-xl font-medium leading-relaxed ${searchSource === 'not-found' ? 'text-rose-600 dark:text-rose-400 text-base' : 'text-slate-800 dark:text-white'}`}>{result}</div>
+                                            ) : (<MarkdownDisplay content={result} />)}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {!result && !isSearching && query === "" && (
+                                <div className="flex flex-col items-center justify-center text-slate-500 mt-12 opacity-80 dark:opacity-60">
+                                    <DatabaseIcon className="w-12 h-12 mb-4 text-slate-400 dark:text-slate-600" />
+                                    <p className="text-center text-sm max-w-sm text-slate-600 dark:text-slate-400">
+                                        Cari jawaban dari database lokal Bank Soal. <br/>{userRole === 'admin' ? "Mode AI Aktif (Otomatis jika tidak ada di DB)." : ""}
+                                    </p>
+                                </div>
+                            )}
+                        </main>
+                    )}
                 </div>
             );
         };
