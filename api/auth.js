@@ -1,64 +1,54 @@
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Metode Tidak Diizinkan' });
-    }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Metode Tidak Diizinkan' });
 
     try {
-        const { action, key } = req.body;
+        const { action, key, device } = req.body;
         
-        // Ambil ID Sheet dan Kunci Admin (Master Key) dari Vercel Environment Variables
         const sheetId = process.env.SECRET_SHEET_ID;
         const envAdminKey = process.env.ADMIN_ACCESS_KEY; 
+        const gasUrl = process.env.GAS_WEB_APP_URL;
 
         if (!sheetId || !envAdminKey) {
-            return res.status(500).json({ error: "Konfigurasi SECRET_SHEET_ID / ADMIN_ACCESS_KEY belum disetel di Vercel Settings." });
+            return res.status(500).json({ error: "Konfigurasi sistem belum lengkap di Vercel." });
         }
 
-        // Endpoint khusus Google Visualization API untuk mengambil spesifik Sheet bernama "admin"
+        // Helper untuk mencatat log ke Google Sheets (Berjalan di background)
+        const logLogin = async (role, status) => {
+            if (!gasUrl) return;
+            try {
+                await fetch(gasUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'log_login', role, status, device: device || 'Unknown' }),
+                    headers: { 'Content-Type': 'text/plain' }
+                });
+            } catch(e) { console.error("Gagal log:", e); }
+        };
+
         const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=admin`;
-        
         const response = await fetch(csvUrl);
-        if (!response.ok) {
-            throw new Error("Gagal mengambil data dari Google Sheets. Pastikan Spreadsheet disetel ke 'Anyone with the link can view'.");
-        }
-
+        if (!response.ok) throw new Error("Gagal mengambil data dari Google Sheets.");
+        
         const csvText = await response.text();
-        
-        // Parsing CSV Sederhana untuk mencari baris PUBLIC_KEY
         let currentPublicKey = null;
-        const rows = csvText.split('\n');
-        
-        for (let row of rows) {
-            // Hilangkan tanda kutip ganda ("") bawaan CSV
+        for (let row of csvText.split('\n')) {
             const columns = row.split(',').map(col => col.replace(/(^"|"$)/g, '').trim());
-            
-            // Asumsi format di sheet -> Kolom A: PUBLIC_KEY | Kolom B: 12345
-            if (columns[0] === 'PUBLIC_KEY') {
-                currentPublicKey = columns[1];
-                break;
-            }
+            if (columns[0] === 'PUBLIC_KEY') { currentPublicKey = columns[1]; break; }
         }
 
-        if (!currentPublicKey) {
-            return res.status(500).json({ error: "Kunci publik belum diatur di dalam sheet 'admin'. Harap jalankan script GAS terlebih dahulu." });
-        }
-
-        // AKSI: VERIFIKASI LOGIN
         if (action === 'verify') {
             if (key === envAdminKey) {
-                // Sesi Admin Valid
+                await logLogin('Admin', '🟢 Sukses');
                 return res.status(200).json({ role: 'admin' });
             } else if (key === currentPublicKey) {
-                // Sesi Publik Valid
+                await logLogin('Public', '🟢 Sukses');
                 return res.status(200).json({ role: 'public' });
             } else {
+                await logLogin('Unknown', '🔴 Gagal (Sandi Salah)');
                 return res.status(401).json({ error: 'Kunci Akses tidak valid atau telah kadaluarsa.' });
             }
         }
-
         return res.status(400).json({ error: 'Aksi tidak dikenal.' });
-
     } catch (error) {
-        res.status(500).json({ error: "Terjadi kesalahan sistem: " + error.message });
+        res.status(500).json({ error: error.message });
     }
 }
