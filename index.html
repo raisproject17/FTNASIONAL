@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -6,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BANK FT by rais.project - Search Engine</title>
     
-    <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -28,15 +26,12 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
-        /* Custom Scrollbar & Premium Utilities */
         body { background-color: #f8fafc; transition: background-color 0.3s ease; }
         html.dark body { background-color: #020617; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         html.dark ::-webkit-scrollbar-thumb { background: #334155; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        html.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
         
         .glass-panel {
             background: rgba(255, 255, 255, 0.6);
@@ -63,7 +58,6 @@
             pointer-events: none;
         }
 
-        /* AI Typing Indicator */
         .typing-indicator span {
             animation: blink 1.4s infinite both;
             height: 6px; width: 6px;
@@ -108,12 +102,34 @@
         const XIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
         const LogOutIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>;
         const KeyIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></svg>;
-        const LockIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
+        const ShieldIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2-1 4-2 7-2 2.5 0 4.5 1 6.5 2a1 1 0 0 1 1 1z"/></svg>;
+        const AlertIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
 
         const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 Jam
         const SESSION_DURATION = 60 * 60 * 1000; // 1 Jam batas login publik
 
-        // Utility DB
+        // --- Sistem Cookies untuk Limitasi ---
+        const setCookie = (name, value, days) => {
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        };
+        const getCookie = (name) => {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for(let i=0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        };
+
+        // Utility DB Lokal
         const dbPromise = () => {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open('SmartQuizDB', 1);
@@ -154,7 +170,12 @@
             const [isAuthenticating, setIsAuthenticating] = useState(false);
             const [authLoading, setAuthLoading] = useState(true);
 
-            // State Data
+            // State Modal Admin (Ubah Kode Akses)
+            const [showModal, setShowModal] = useState(false);
+            const [newPublicCode, setNewPublicCode] = useState("");
+            const [modalMsg, setModalMsg] = useState({ text: '', type: '' });
+
+            // State Data DB
             const [query, setQuery] = useState("");
             const [db, setDb] = useState({});
             const [dbStatus, setDbStatus] = useState({ state: 'loading', msg: 'Memuat Database...' });
@@ -164,7 +185,7 @@
             const [matchedQuestion, setMatchedQuestion] = useState(null);
             const [isDarkMode, setIsDarkMode] = useState(true);
 
-            // 1. Cek Sesi Akses di Lokal (Saat pertama dimuat)
+            // 1. Cek Sesi & Cookies
             useEffect(() => {
                 const role = localStorage.getItem('session_role');
                 const loginTime = localStorage.getItem('session_time');
@@ -176,10 +197,10 @@
                     if (loginTime && (now - parseInt(loginTime) < SESSION_DURATION)) {
                         setUserRole('public');
                     } else {
-                        // Sesi publik expired
+                        // Sesi publik expired secara waktu (1 jam habis)
                         localStorage.removeItem('session_role');
                         localStorage.removeItem('session_time');
-                        alert("Sesi Kunci Publik Anda telah habis (1 Jam). Silakan masukkan kunci kembali.");
+                        alert("Sesi Kunci Publik Anda telah habis (1 Jam). Batas login perangkat adalah 1x dalam 24 jam.");
                     }
                 }
                 setAuthLoading(false);
@@ -192,10 +213,10 @@
                 setIsAuthenticating(true);
 
                 try {
-                    const res = await fetch('/api/verify-key', {
+                    const res = await fetch('/api/auth', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ key: inputKey })
+                        body: JSON.stringify({ action: 'verify', key: inputKey })
                     });
                     const data = await res.json();
                     
@@ -205,6 +226,16 @@
                         localStorage.setItem('session_role', 'admin');
                         setUserRole('admin');
                     } else if (data.role === 'public') {
+                        // CEK LIMITASI 1X 24 JAM
+                        const isLockedOut = getCookie('public_lockout');
+                        if (isLockedOut === 'true') {
+                            setLoginError("Akses ditolak: Perangkat ini telah mencapai batas login (1x dalam 24 jam). Silakan coba lagi besok.");
+                            setIsAuthenticating(false);
+                            return; // Batalkan proses login
+                        }
+
+                        // JIKA LOLOS: Berikan Sesi 1 jam & Tulis Cookie larangan selama 1 hari (24 Jam)
+                        setCookie('public_lockout', 'true', 1);
                         localStorage.setItem('session_role', 'public');
                         localStorage.setItem('session_time', Date.now().toString());
                         setUserRole('public');
@@ -222,7 +253,7 @@
                 setUserRole(null);
             };
 
-            // 2. Initialize theme & PWA
+            // 2. Initialize theme
             useEffect(() => {
                 const savedTheme = localStorage.getItem('theme');
                 setIsDarkMode(savedTheme !== 'light');
@@ -314,7 +345,7 @@
                 return highestScore > 0.25 ? bestMatch : null;
             };
 
-            // 4. API Search Serverless Call
+            // 4. API Search AI Call (KHUSUS ADMIN)
             const fetchAIFallback = async (searchQuery) => {
                 try {
                     const response = await fetch('/api/ai-search', {
@@ -324,15 +355,36 @@
                     });
                     
                     const data = await response.json();
-                    
-                    if (!response.ok) {
-                        throw new Error(data.error || 'Terjadi kesalahan pada Server');
-                    }
-                    
+                    if (!response.ok) throw new Error(data.error || 'Terjadi kesalahan pada Server');
                     return data.answer;
                 } catch (error) {
                     console.error(error);
-                    return `Terjadi kendala saat merayapi internet: ${error.message}. Silakan cek API Key di Vercel atau coba lagi nanti.`;
+                    return `Terjadi kendala saat merayapi internet: ${error.message}.`;
+                }
+            };
+
+            // Handle Perubahan Kode Akses Publik (KHUSUS ADMIN)
+            const handleUpdateKey = async (e) => {
+                e.preventDefault();
+                setModalMsg({ text: 'Menyimpan...', type: 'info' });
+                try {
+                    const res = await fetch('/api/auth', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            action: 'update_public_key', 
+                            newKey: newPublicCode,
+                            adminKey: process.env.ADMIN_ACCESS_KEY // Simulasi validasi admin, Vercel akan membaca aslinya di backend
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || "Gagal mengubah kode.");
+                    
+                    setModalMsg({ text: 'Kode berhasil diubah! (Berlaku hingga server restart)', type: 'success' });
+                    setNewPublicCode("");
+                    setTimeout(() => setShowModal(false), 2000);
+                } catch (err) {
+                    setModalMsg({ text: err.message, type: 'error' });
                 }
             };
 
@@ -341,7 +393,7 @@
                     const text = await navigator.clipboard.readText();
                     setQuery(text);
                 } catch (err) {
-                    alert('Browser Anda tidak mengizinkan akses clipboard otomatis. Silakan gunakan Ctrl+V atau Tahan->Paste.');
+                    alert('Gagal akses clipboard. Silakan gunakan Ctrl+V atau Paste manual.');
                 }
             };
 
@@ -357,28 +409,32 @@
                 const dbMatch = searchLocalDB(query, db);
                 
                 if (dbMatch) {
+                    // Ditemukan di Database (Untuk Publik & Admin)
                     setResult(dbMatch.a);
                     setMatchedQuestion(dbMatch.q);
                     setSearchSource('db');
                     setIsSearching(false);
                 } else {
-                    setSearchSource('ai');
-                    const aiAnswer = await fetchAIFallback(query);
-                    setResult(aiAnswer);
+                    // Tidak Ditemukan di Database
+                    if (userRole === 'admin') {
+                        // Admin: Lanjut Search Web AI
+                        setSearchSource('ai');
+                        const aiAnswer = await fetchAIFallback(query);
+                        setResult(aiAnswer);
+                    } else {
+                        // Publik: Cukup tampilkan tidak ditemukan
+                        setSearchSource('not-found');
+                        setResult("Maaf, jawaban tidak ditemukan di database Bank Soal.");
+                    }
                     setIsSearching(false);
                 }
             };
 
-            // Menunggu load status autentikasi
             if (authLoading) {
-                return (
-                    <div className="min-h-screen flex items-center justify-center">
-                        <LoaderIcon className="w-8 h-8 animate-spin text-sky-500" />
-                    </div>
-                );
+                return <div className="min-h-screen flex items-center justify-center"><LoaderIcon className="w-8 h-8 animate-spin text-sky-500" /></div>;
             }
 
-            // Tampilan Layar Kunci (Login tanpa Firebase)
+            // TAMPILAN LOCK SCREEN
             if (!userRole) {
                 return (
                     <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -387,9 +443,7 @@
                                 <KeyIcon className="text-sky-500 dark:text-sky-400 w-8 h-8" />
                             </div>
                             <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-slate-400 bg-clip-text text-transparent mb-2">Akses Terkunci</h1>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">
-                                Masukkan Kunci Akses untuk membuka Search Engine.
-                            </p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">Masukkan Kunci Akses untuk membuka Search Engine.</p>
                             
                             <form onSubmit={handleLogin} className="w-full">
                                 <input
@@ -400,18 +454,13 @@
                                     className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 mb-4"
                                     required
                                 />
-                                
                                 {loginError && (
-                                    <div className="text-rose-500 text-sm mb-4 bg-rose-500/10 p-2 rounded-lg border border-rose-500/20">
-                                        {loginError}
+                                    <div className="text-rose-500 text-sm mb-4 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20 flex items-start gap-2 text-left">
+                                        <AlertIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                                        <span>{loginError}</span>
                                     </div>
                                 )}
-
-                                <button 
-                                    type="submit"
-                                    disabled={isAuthenticating || !inputKey.trim()}
-                                    className="w-full py-3 px-4 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all flex items-center justify-center shadow-sm"
-                                >
+                                <button type="submit" disabled={isAuthenticating || !inputKey.trim()} className="w-full py-3 px-4 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white rounded-xl font-medium transition-all flex items-center justify-center shadow-sm">
                                     {isAuthenticating ? <LoaderIcon className="w-5 h-5 animate-spin" /> : "Buka Akses"}
                                 </button>
                             </form>
@@ -420,9 +469,37 @@
                 );
             }
 
-            // Tampilan Utama PWA
+            // TAMPILAN UTAMA
             return (
                 <div className="min-h-screen flex flex-col items-center p-4 md:p-8 w-full max-w-3xl mx-auto animate-in fade-in duration-500">
+                    
+                    {/* MODAL UBAH KODE AKSES (ADMIN) */}
+                    {showModal && userRole === 'admin' && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                            <div className="glass-panel w-full max-w-sm p-6 rounded-2xl animate-in zoom-in-95">
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Ubah Kode Publik</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Buat kode akses baru untuk siswa. (Hanya berlaku sementara hingga server direstart).</p>
+                                
+                                <form onSubmit={handleUpdateKey}>
+                                    <input 
+                                        type="text" value={newPublicCode} onChange={(e)=>setNewPublicCode(e.target.value)}
+                                        placeholder="Ketik kode baru..." required
+                                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl py-2.5 px-4 mb-3 text-slate-800 dark:text-white"
+                                    />
+                                    {modalMsg.text && (
+                                        <div className={`text-sm mb-4 p-2 rounded-lg ${modalMsg.type === 'error' ? 'bg-rose-500/10 text-rose-500' : modalMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-sky-500/10 text-sky-500'}`}>
+                                            {modalMsg.text}
+                                        </div>
+                                    )}
+                                    <div className="flex gap-2 justify-end">
+                                        <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition">Batal</button>
+                                        <button type="submit" className="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-white transition">Simpan</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Header */}
                     <header className="w-full flex items-center justify-between mb-8 mt-4">
                         <div className="flex items-center gap-3">
@@ -433,20 +510,23 @@
                                 <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">BANK-FT</h1>
                                 <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                                     <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                                    {userRole === 'admin' ? "Sesi Admin (Permanen)" : "Sesi Publik (Aktif)"}
+                                    {userRole === 'admin' ? "Sesi Admin (Permanen)" : "Sesi Publik (Aktif 1 Jam)"}
                                 </p>
                             </div>
                         </div>
                         
                         <div className="flex items-center gap-2 md:gap-3">
+                            {userRole === 'admin' && (
+                                <button onClick={() => setShowModal(true)} className="p-2 rounded-full hover:bg-sky-100 dark:hover:bg-sky-900/30 text-sky-500 transition-colors" title="Ubah Kode Akses Publik">
+                                    <ShieldIcon className="w-5 h-5" />
+                                </button>
+                            )}
                             <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors" aria-label="Toggle Theme">
                                 {isDarkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
                             </button>
-
-                            <button onClick={handleLogout} className="p-2 rounded-full hover:bg-rose-100 dark:hover:bg-rose-900/30 text-rose-500 transition-colors" title="Kunci Kembali">
+                            <button onClick={handleLogout} className="p-2 rounded-full hover:bg-rose-100 dark:hover:bg-rose-900/30 text-rose-500 transition-colors" title="Keluar">
                                 <LogOutIcon className="w-5 h-5" />
                             </button>
-
                             <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border glass-panel
                                 ${dbStatus.state === 'success' ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500/20 bg-emerald-500/10' : 
                                   dbStatus.state === 'error' ? 'text-rose-600 dark:text-rose-400 border-rose-500/20 bg-rose-500/10' : 
@@ -461,111 +541,99 @@
 
                     {/* Search Section */}
                     <main className="w-full flex-1 flex flex-col items-center">
-                        {userRole === 'admin' ? (
-                            <>
-                                <form onSubmit={handleSearch} className="w-full relative group z-10 mb-8">
-                                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                        <SearchIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 group-focus-within:text-sky-500 transition-colors" />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        value={query}
-                                        onChange={(e) => setQuery(e.target.value)}
-                                        placeholder="Masukkan soal ujian / kuis di sini..."
-                                        className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-slate-300/50 dark:border-slate-700/50 rounded-2xl py-4 pl-12 pr-40 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/50 transition-all shadow-xl"
-                                    />
-                                    <div className="absolute inset-y-2 right-2 flex items-center gap-2">
-                                        {query ? (
-                                            <button type="button" onClick={() => setQuery('')} className="p-2 text-slate-400 hover:text-rose-500 transition-colors bg-slate-100 dark:bg-slate-800 rounded-lg" title="Hapus">
-                                                <XIcon className="w-5 h-5" />
-                                            </button>
-                                        ) : (
-                                            <button type="button" onClick={handlePaste} className="p-2 text-slate-400 hover:text-sky-500 transition-colors bg-slate-100 dark:bg-slate-800 rounded-lg" title="Paste Soal">
-                                                <ClipboardIcon className="w-5 h-5" />
-                                            </button>
-                                        )}
-                                        <button type="submit" disabled={isSearching || !query.trim()} className="h-full px-5 bg-sky-500 hover:bg-sky-400 text-white rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
-                                            Cari
-                                        </button>
-                                    </div>
-                                </form>
-
-                                {/* Loading State */}
-                                {isSearching && searchSource === 'ai' && (
-                                    <div className="w-full glass-panel rounded-2xl p-6 flex flex-col items-center justify-center space-y-4 animate-in fade-in zoom-in duration-300">
-                                        <div className="h-14 w-14 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                                            <SparklesIcon className="w-6 h-6 text-indigo-400 animate-pulse" />
-                                        </div>
-                                        <div className="text-center">
-                                            <h3 className="text-sm font-medium text-indigo-800 dark:text-indigo-300 mb-1">Mencari di Internet (Auto-Fallback)</h3>
-                                            <div className="typing-indicator text-indigo-500 dark:text-indigo-400/50">
-                                                <span></span><span></span><span></span>
-                                            </div>
-                                        </div>
-                                    </div>
+                        <form onSubmit={handleSearch} className="w-full relative group z-10 mb-8">
+                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                <SearchIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 group-focus-within:text-sky-500 transition-colors" />
+                            </div>
+                            <input
+                                type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+                                placeholder="Masukkan soal ujian / kuis di sini..."
+                                className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-slate-300/50 dark:border-slate-700/50 rounded-2xl py-4 pl-12 pr-40 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/50 transition-all shadow-xl"
+                            />
+                            <div className="absolute inset-y-2 right-2 flex items-center gap-2">
+                                {query ? (
+                                    <button type="button" onClick={() => setQuery('')} className="p-2 text-slate-400 hover:text-rose-500 transition-colors bg-slate-100 dark:bg-slate-800 rounded-lg" title="Hapus">
+                                        <XIcon className="w-5 h-5" />
+                                    </button>
+                                ) : (
+                                    <button type="button" onClick={handlePaste} className="p-2 text-slate-400 hover:text-sky-500 transition-colors bg-slate-100 dark:bg-slate-800 rounded-lg" title="Paste Soal">
+                                        <ClipboardIcon className="w-5 h-5" />
+                                    </button>
                                 )}
-
-                                {/* Result Section */}
-                                {result && !isSearching && (
-                                    <div className="w-full flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                        <div className="flex items-center gap-2">
-                                            {searchSource === 'db' ? (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                                    <DatabaseIcon className="w-3.5 h-3.5" /> Ditemukan di Database
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                                                    <SparklesIcon className="w-3.5 h-3.5" /> Ditemukan via AI Search
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-                                            <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl opacity-20 transition-opacity ${searchSource === 'db' ? 'bg-emerald-500' : 'bg-indigo-500'}`}></div>
-                                            
-                                            {matchedQuestion && searchSource === 'db' && (
-                                                <div className="mb-4 pb-4 border-b border-slate-200 dark:border-slate-700/50">
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider font-semibold">Soal Tersimpan</p>
-                                                    <p className="text-slate-700 dark:text-slate-300 text-sm">{matchedQuestion}</p>
-                                                </div>
-                                            )}
-                                            
-                                            <div className="relative z-10">
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider font-semibold">Jawaban</p>
-                                                {searchSource === 'db' ? (
-                                                    <div className="text-lg md:text-xl font-medium text-slate-800 dark:text-white leading-relaxed">
-                                                        {result}
-                                                    </div>
-                                                ) : (
-                                                    <MarkdownDisplay content={result} />
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {!result && !isSearching && query === "" && (
-                                    <div className="flex flex-col items-center justify-center text-slate-500 mt-12 opacity-80 dark:opacity-60">
-                                        <DatabaseIcon className="w-12 h-12 mb-4 text-slate-400 dark:text-slate-600" />
-                                        <p className="text-center text-sm max-w-sm text-slate-600 dark:text-slate-400">
-                                            Aplikasi pintar mencari jawaban di database lokal. Jika tidak ada, sistem otomatis merayapi internet untuk mencarikannya.
-                                        </p>
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center text-slate-500 mt-12 glass-panel p-8 rounded-3xl max-w-md w-full text-center shadow-lg border border-rose-500/10">
-                                <LockIcon className="w-14 h-14 mb-4 text-rose-500/80 dark:text-rose-400" />
-                                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">Akses Dibatasi</h2>
-                                <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 px-4">
-                                    Fitur <strong>Search Engine</strong> dan <strong>AI</strong> dikunci dan hanya diizinkan untuk akun Admin guna mencegah spam server.
-                                </p>
-                                <button 
-                                    onClick={handleLogout} 
-                                    className="px-6 py-2.5 bg-rose-500 hover:bg-rose-400 text-white rounded-xl font-medium transition-all shadow-sm flex items-center justify-center gap-2 w-full"
-                                >
-                                    <LogOutIcon className="w-4 h-4" /> Keluar & Gunakan Kunci Admin
+                                <button type="submit" disabled={isSearching || !query.trim()} className="h-full px-5 bg-sky-500 hover:bg-sky-400 text-white rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                                    Cari
                                 </button>
+                            </div>
+                        </form>
+
+                        {/* Loading State AI (Admin) */}
+                        {isSearching && searchSource === 'ai' && (
+                            <div className="w-full glass-panel rounded-2xl p-6 flex flex-col items-center justify-center space-y-4 animate-in fade-in zoom-in duration-300">
+                                <div className="h-14 w-14 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                                    <SparklesIcon className="w-6 h-6 text-indigo-400 animate-pulse" />
+                                </div>
+                                <div className="text-center">
+                                    <h3 className="text-sm font-medium text-indigo-800 dark:text-indigo-300 mb-1">Mencari via AI & Web (Mode Admin)</h3>
+                                    <div className="typing-indicator text-indigo-500 dark:text-indigo-400/50">
+                                        <span></span><span></span><span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Result Section */}
+                        {result && !isSearching && (
+                            <div className="w-full flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="flex items-center gap-2">
+                                    {searchSource === 'db' && (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                            <DatabaseIcon className="w-3.5 h-3.5" /> Ditemukan di Database
+                                        </span>
+                                    )}
+                                    {searchSource === 'ai' && (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                                            <SparklesIcon className="w-3.5 h-3.5" /> Ditemukan via AI Search
+                                        </span>
+                                    )}
+                                    {searchSource === 'not-found' && (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                                            <AlertIcon className="w-3.5 h-3.5" /> Database Kosong
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className={`glass-panel rounded-2xl p-6 relative overflow-hidden group ${searchSource === 'not-found' ? 'border-rose-500/20' : ''}`}>
+                                    <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl opacity-20 transition-opacity 
+                                        ${searchSource === 'db' ? 'bg-emerald-500' : searchSource === 'ai' ? 'bg-indigo-500' : 'bg-rose-500'}`}>
+                                    </div>
+                                    
+                                    {matchedQuestion && searchSource === 'db' && (
+                                        <div className="mb-4 pb-4 border-b border-slate-200 dark:border-slate-700/50">
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider font-semibold">Soal Tersimpan</p>
+                                            <p className="text-slate-700 dark:text-slate-300 text-sm">{matchedQuestion}</p>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="relative z-10">
+                                        {searchSource !== 'not-found' && <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider font-semibold">Jawaban</p>}
+                                        {searchSource === 'db' || searchSource === 'not-found' ? (
+                                            <div className={`text-lg md:text-xl font-medium leading-relaxed ${searchSource === 'not-found' ? 'text-rose-600 dark:text-rose-400 text-base' : 'text-slate-800 dark:text-white'}`}>
+                                                {result}
+                                            </div>
+                                        ) : (
+                                            <MarkdownDisplay content={result} />
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {!result && !isSearching && query === "" && (
+                            <div className="flex flex-col items-center justify-center text-slate-500 mt-12 opacity-80 dark:opacity-60">
+                                <DatabaseIcon className="w-12 h-12 mb-4 text-slate-400 dark:text-slate-600" />
+                                <p className="text-center text-sm max-w-sm text-slate-600 dark:text-slate-400">
+                                    Cari jawaban dari database lokal Bank Soal. <br/>{userRole === 'admin' ? "Mode AI Aktif (Otomatis jika tidak ada di DB)." : ""}
+                                </p>
                             </div>
                         )}
                     </main>
@@ -578,7 +646,6 @@
     </script>
 </body>
 </html>
-
 
 
 ```
