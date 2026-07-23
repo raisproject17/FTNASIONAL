@@ -6,6 +6,9 @@
     <title>BANK FT by rais.project - Search Engine</title>
     
     <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class', }</script>
     
@@ -16,50 +19,82 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
-        body { background-color: #f8fafc; }
-        .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+        body { background-color: #f8fafc; transition: background-color 0.3s ease; }
+        html.dark body { background-color: #020617; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        html.dark ::-webkit-scrollbar-thumb { background: #334155; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+        }
+        html.dark .glass-panel {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        .bg-glow {
+            position: absolute; width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(14,165,233,0.15) 0%, rgba(0,0,0,0) 70%);
+            top: -150px; left: 50%; transform: translateX(-50%); z-index: -1; pointer-events: none;
+        }
     </style>
 </head>
-<body class="text-slate-800 antialiased min-h-screen">
+<body class="text-slate-800 dark:text-slate-200 antialiased min-h-screen relative">
+    <div class="bg-glow"></div>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // ICONS
+        const SearchIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
+        const ClipboardIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>;
+        const XIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
+        const BookOpenIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
+        const LoaderIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>;
+
         const App = () => {
-            const [userRole, setUserRole] = useState(null);
+            const [userRole, setUserRole] = useState('admin'); // Set default admin untuk preview
             const [query, setQuery] = useState("");
             const [db, setDb] = useState({});
             const [result, setResult] = useState(null);
             const [isSearching, setIsSearching] = useState(false);
-            const [status, setStatus] = useState("Memuat...");
+            const [status, setStatus] = useState("Memuat Database...");
 
             useEffect(() => {
-                const role = localStorage.getItem('session_role') || 'public';
-                setUserRole(role);
                 loadDatabase();
             }, []);
 
             const loadDatabase = async () => {
                 try {
-                    // Menggunakan URL absolut yang mengarah ke Vercel backend
-                    const response = await fetch(window.location.origin + '/api/get-sheet');
-                    if (!response.ok) throw new Error("Gagal akses API");
+                    // Menggunakan Direct CSV Google Sheet gviz (Sheet: quiz) agar aman dari error blob URL
+                    const SHEET_ID = '10Xr6T9yTjfCTvMLurGzxe82gZ1QHbgEimYhEIBnlQp0';
+                    const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=quiz`;
+                    
+                    const response = await fetch(csvUrl);
                     const csvText = await response.text();
+                    
                     Papa.parse(csvText, {
                         complete: (results) => {
                             let newDb = {};
                             results.data.forEach(row => {
+                                // Membaca format Kolom A:B, C:D, E:F dst
                                 for (let i = 0; i < row.length; i += 2) {
-                                    if (row[i]) newDb[row[i].toLowerCase().trim()] = row[i+1];
+                                    if (row[i]) {
+                                        newDb[row[i].toLowerCase().trim()] = row[i+1];
+                                    }
                                 }
                             });
                             setDb(newDb);
-                            setStatus("Siap");
+                            setStatus(`DB Ready (${Object.keys(newDb).length} Data)`);
                         }
                     });
                 } catch (e) { 
-                    setStatus("Gagal memuat DB: " + e.message);
+                    setStatus("Gagal memuat DB: " + e.message); 
                 }
             };
 
@@ -69,33 +104,82 @@
                 setResult(null);
 
                 const normQ = query.toLowerCase().trim();
+                
+                // 1. Cek Database Lokal Terlebih Dahulu
                 if (db[normQ]) {
                     setResult(db[normQ]);
-                } else if (userRole === 'admin' || userRole === 'private') {
-                    try {
-                        const res = await fetch(window.location.origin + '/api/ai-search', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ query })
-                        });
-                        const data = await res.json();
-                        setResult(res.ok ? data.answer : "⚠️ " + data.error);
-                    } catch (e) { setResult("Error koneksi AI."); }
+                    setIsSearching(false);
                 } else {
-                    setResult("Tidak ditemukan di database.");
+                    // 2. Jika tidak ada di DB dan role admin, panggil AI Search Engine
+                    if (userRole === 'admin') {
+                        try {
+                            const res = await fetch('/api/ai-search', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ query })
+                            });
+                            const data = await res.json();
+                            setResult(res.ok ? data.answer : "⚠️ " + data.error);
+                        } catch (e) { 
+                            setResult("Maaf, jawaban tidak ditemukan di database dan gagal terhubung ke server AI."); 
+                        }
+                    } else {
+                        setResult("Maaf, jawaban tidak ditemukan di database Bank Soal.");
+                    }
+                    setIsSearching(false);
                 }
-                setIsSearching(false);
+            };
+
+            const handlePaste = async () => {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    setQuery(text);
+                } catch (err) {
+                    alert('Gunakan Ctrl+V untuk menempel teks.');
+                }
             };
 
             return (
-                <div className="max-w-3xl mx-auto p-4">
-                    <h1 className="text-2xl font-bold mb-4">BANK-FT</h1>
-                    <p className="text-xs mb-4 text-slate-500">Status: {status}</p>
-                    <form onSubmit={handleSearch} className="flex gap-2 mb-4">
-                        <input className="flex-1 border p-2 rounded" value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Cari soal..." />
-                        <button type="submit" className="bg-sky-500 text-white px-4 py-2 rounded">Cari</button>
+                <div className="max-w-3xl mx-auto p-4 md:p-8">
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-3">
+                            <BookOpenIcon className="w-8 h-8 text-sky-500" />
+                            <div>
+                                <h1 className="text-2xl font-bold">BANK-FT</h1>
+                                <p className="text-xs text-slate-400">{status}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form onSubmit={handleSearch} className="relative mb-6">
+                        <input
+                            type="text" 
+                            value={query} 
+                            onChange={(e) => setQuery(e.target.value)}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-2xl py-4 pl-4 pr-36 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            placeholder="Cari soal kuis..."
+                        />
+                        <div className="absolute right-2 top-2.5 flex items-center gap-1">
+                            {query ? (
+                                <button type="button" onClick={() => setQuery('')} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg"><XIcon className="w-5 h-5"/></button>
+                            ) : (
+                                <button type="button" onClick={handlePaste} className="p-2 text-sky-500 hover:bg-sky-500/10 rounded-lg"><ClipboardIcon className="w-5 h-5"/></button>
+                            )}
+                            <button type="submit" disabled={isSearching || !query.trim()} className="bg-sky-500 hover:bg-sky-400 text-white px-5 py-2.5 rounded-xl font-medium disabled:opacity-50">Cari</button>
+                        </div>
                     </form>
-                    {isSearching ? <div>Mencari...</div> : result && <div className="p-4 bg-white border rounded shadow">{result}</div>}
+
+                    {isSearching ? (
+                        <div className="text-center py-12">
+                            <LoaderIcon className="w-8 h-8 animate-spin mx-auto text-sky-500 mb-2"/>
+                            <p className="text-sm text-slate-500">Mencari jawaban...</p>
+                        </div>
+                    ) : result && (
+                        <div className="glass-panel p-6 rounded-2xl mt-4 whitespace-pre-line leading-relaxed shadow-lg">
+                            <p className="text-xs font-semibold text-sky-500 uppercase tracking-wider mb-2">Jawaban</p>
+                            <div className="text-slate-800 dark:text-slate-200 text-lg">{result}</div>
+                        </div>
+                    )}
                 </div>
             );
         };
